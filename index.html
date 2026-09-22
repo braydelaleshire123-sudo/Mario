@@ -302,7 +302,7 @@ function update(){
     if(newSection<G.section){G.section=newSection;G.roomTitle=rooms[newSection].name;toast("ROOM "+(sectionCount-newSection)+" • "+rooms[newSection].name)}
     else G.section=newSection;
   }
-  if(player.y>G.totalH()+120)die();
+  const roomBottom=(sectionCount-G.section)*sectionH;\n  if(player.y>roomBottom+90)die();
   if(G.section===0&&player.y<worldY(0,500)+40&&G.checkpoint<=3){
     if(overlap(player,button)){button.hit=true;toast("FINAL BUTTON HIT")}
     if(button.hit&&overlap(player,{x:pineapple.x-22,y:pineapple.y-26,w:44,h:55})){pineapple.collected=true;win();return}
