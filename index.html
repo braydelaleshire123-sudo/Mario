@@ -30,7 +30,7 @@ addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowleft','arro
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 
 const world={w:12000};
-const player={x:120,y:300,w:34,h:52,vx:0,vy:0,ground:false,coyote:0,jumpBuffer:0,face:1,inv:0,run:0};
+const player={x:120,y:300,w:34,h:52,vx:0,vy:0,ground:false,coyote:0,jumpBuffer:0,face:1,inv:0,power:0,run:0};
 const platforms=[
 {x:0,y:560,w:1100,h:120},{x:1250,y:560,w:600,h:120},{x:1980,y:500,w:600,h:180},
 {x:2700,y:560,w:900,h:120},{x:3800,y:480,w:650,h:200},{x:4620,y:560,w:1000,h:120},
@@ -38,14 +38,15 @@ const platforms=[
 {x:10150,y:560,w:1850,h:120}
 ];
 const blocks=[
-{x:450,y:450,w:52,h:52},{x:502,y:450,w:52,h:52},{x:900,y:390,w:52,h:52},
-{x:1450,y:440,w:52,h:52},{x:1502,y:388,w:52,h:52},{x:2160,y:400,w:52,h:52},
-{x:2820,y:450,w:52,h:52},{x:2872,y:450,w:52,h:52},{x:3980,y:390,w:52,h:52},
-{x:4700,y:450,w:52,h:52},{x:4752,y:398,w:52,h:52},{x:5200,y:400,w:52,h:52},
-{x:7100,y:390,w:52,h:52},{x:8250,y:450,w:52,h:52},{x:9500,y:390,w:52,h:52},
-{x:10500,y:450,w:52,h:52}
+{x:450,y:450,w:52,h:52,used:false},{x:502,y:450,w:52,h:52,used:false},{x:900,y:390,w:52,h:52,used:false},
+{x:1450,y:440,w:52,h:52,used:false},{x:1502,y:388,w:52,h:52,used:false},{x:2160,y:400,w:52,h:52,used:false},
+{x:2820,y:450,w:52,h:52,used:false},{x:2872,y:450,w:52,h:52,used:false},{x:3980,y:390,w:52,h:52,used:false},
+{x:4700,y:450,w:52,h:52,used:false},{x:4752,y:398,w:52,h:52,used:false},{x:5200,y:400,w:52,h:52,used:false},
+{x:7100,y:390,w:52,h:52,used:false},{x:8250,y:450,w:52,h:52,used:false},{x:9500,y:390,w:52,h:52,used:false},
+{x:10500,y:450,w:52,h:52,used:false}
 ];
 const coins=[];
+const powerups=[];
 function addCoins(x,y,n,dx=52){for(let i=0;i<n;i++)coins.push({x:x+i*dx,y,got:false,t:Math.random()*6.28})}
 addCoins(220,470,8);addCoins(1320,470,7);addCoins(2020,410,7);addCoins(2750,470,10);addCoins(3860,400,7);addCoins(4650,470,12);addCoins(6950,410,7);addCoins(7850,470,10);addCoins(9250,390,8);addCoins(10200,470,14);
 
@@ -69,18 +70,49 @@ function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
 function resetPlayer(){player.x=120;player.y=400;player.vx=0;player.vy=0;player.inv=1.5;cam=0}
 function hurt(){if(player.inv>0)return;lives--;shake=12;spawn(player.x+player.w/2,player.y+player.h/2,18,'#ff6b6b');if(lives<=0){end('GAME OVER','You scored '+score+' points.')}else resetPlayer()}
 function end(t,s){ended=true;document.getElementById('title').textContent=t;document.getElementById('subtitle').textContent=s;document.getElementById('screen').style.display='grid'}
-function restart(){coins.forEach(o=>o.got=false);enemies.forEach(e=>e.alive=true);coinsGot=0;lives=3;score=0;ended=false;player.inv=0;resetPlayer();document.getElementById('screen').style.display='none'}
+function restart(){coins.forEach(o=>o.got=false);blocks.forEach(b=>b.used=false);powerups.length=0;enemies.forEach(e=>e.alive=true);coinsGot=0;lives=3;score=0;ended=false;player.inv=0;player.power=0;resetPlayer();document.getElementById('screen').style.display='none'}
 document.getElementById('restart').onclick=restart;
 
-function solidCollision(){
- player.ground=false;
+function solidCollision(prevX,prevY){
  const solids=platforms.concat(blocks);
- const oldBottom=player.y+player.h-player.vy;
- for(const p of solids){
-  if(player.x+player.w>p.x&&player.x<p.x+p.w&&player.y+player.h>p.y&&oldBottom<=p.y&&player.vy>=0){
-   player.y=p.y-player.h;player.vy=0;player.ground=true;
+ player.ground=false;
+
+ // Horizontal collision first so walls cannot push the player through platforms.
+ if(player.vx!==0){
+  for(const p of solids){
+   if(player.y+player.h>p.y+2&&player.y<p.y+p.h-2&&player.x+player.w>p.x&&player.x<p.x+p.w){
+    if(player.vx>0) player.x=p.x-player.w;
+    else player.x=p.x+p.w;
+    player.vx=0;
+   }
   }
  }
+
+ // Vertical collision uses the previous position, so fast falls cannot tunnel through floors.
+ if(player.vy>=0){
+  for(const p of solids){
+   if(player.x+player.w>p.x+1&&player.x<p.x+p.w-1&&player.y+player.h>=p.y&&prevY+player.h<=p.y+1){
+    player.y=p.y-player.h;
+    player.vy=0;
+    player.ground=true;
+   }
+  }
+ }else{
+  for(const p of solids){
+   if(player.x+player.w>p.x+1&&player.x<p.x+p.w-1&&player.y<=p.y+p.h&&prevY>=p.y+p.h-1){
+    player.y=p.y+p.h;
+    player.vy=0;
+
+    // Hitting a mystery box from underneath activates it and spawns a power-up.
+    if(p.used===false){
+     p.used=true;
+     powerups.push({x:p.x+p.w/2-13,y:p.y-30,w:26,h:26,vy:-3,vx:0,life:10});
+     score+=50;
+     spawn(p.x+p.w/2,p.y,12,'#ffe066');
+    }
+   }
+  }
+ } 
 }
 function update(dt){
  if(ended)return;
@@ -97,11 +129,33 @@ function update(dt){
  if(player.jumpBuffer>0&&player.coyote>0){player.vy=-13.8;player.ground=false;player.coyote=0;player.jumpBuffer=0;spawn(player.x+player.w/2,player.y+player.h,8,'#d8e6ee')}
  if(!(keys[' ']||keys['w']||keys['arrowup'])&&player.vy<-5)player.vy+=22*dt;
  player.vy+=36*dt;player.vy=Math.min(player.vy,20);
+ const prevX=player.x,prevY=player.y;
  player.x+=player.vx;player.y+=player.vy;
  if(player.x<0)player.x=0;
- solidCollision();
+ solidCollision(prevX,prevY);
  if(player.ground&&Math.abs(player.vx)>1)player.run+=dt*12;else player.run+=dt*4;
  for(const o of coins)if(!o.got){o.t+=dt*5;const box={x:o.x-11,y:o.y-11,w:22,h:22};if(overlap(player,box)){o.got=true;coinsGot++;score+=100;spawn(o.x,o.y,10,'#ffd54a')}}
+ for(let i=powerups.length-1;i>=0;i--){
+  const p=powerups[i];
+  p.vy+=24*dt;p.y+=p.vy*dt;
+  // Keep the power-up sitting on the top of the box/platform until collected.
+  for(const s of platforms.concat(blocks)){
+   if(p.x+p.w>s.x&&p.x<s.x+s.w&&p.y+p.h>=s.y&&p.y+p.h-p.vy*dt<=s.y){
+    p.y=s.y-p.h;p.vy=0;
+   }
+  }
+  if(overlap(player,p)){
+   player.power=8;
+   player.inv=8;
+   score+=500;
+   spawn(p.x+p.w/2,p.y+p.h/2,20,'#7df9ff');
+   powerups.splice(i,1);
+  }else{
+   p.life-=dt;
+   if(p.life<=0)powerups.splice(i,1);
+  }
+ }
+ if(player.power>0)player.power-=dt;
  for(const e of enemies)if(e.alive){e.x+=e.vx;if(e.x<e.min||e.x>e.max)e.vx*=-1;const box={x:e.x,y:e.y,w:e.w,h:e.h};if(overlap(player,box)){const stomp=player.vy>0&&player.y+player.h-player.vy<=e.y+12;if(stomp){e.alive=false;player.vy=-9;score+=250;spawn(e.x+20,e.y+20,16,'#b48cff')}else hurt()}}
  if(player.y>H+180)hurt();
  if(overlap(player,goal))end('LEVEL COMPLETE!','Coins: '+coinsGot+'  •  Score: '+score);
@@ -126,25 +180,26 @@ function platform(p){
  ctx.fillStyle='#513524';for(let i=10;i<p.w;i+=42)ctx.fillRect(x+i,p.y+45,10,10);
 }
 function block(b){
- const x=b.x-cam;ctx.fillStyle='#d98d2b';ctx.fillRect(x,b.y,b.w,b.h);ctx.strokeStyle='#7b4b1a';ctx.lineWidth=3;ctx.strokeRect(x+1,b.y+1,b.w-2,b.h-2);
- ctx.fillStyle='#ffd77a';ctx.fillRect(x+7,b.y+7,b.w-14,5);ctx.font='bold 27px Arial';ctx.textAlign='center';ctx.fillStyle='#fff2a9';ctx.fillText('?',x+b.w/2,b.y+37);
+ const x=b.x-cam;ctx.fillStyle=b.used?'#8a632f':'#d98d2b';ctx.fillRect(x,b.y,b.w,b.h);ctx.strokeStyle='#7b4b1a';ctx.lineWidth=3;ctx.strokeRect(x+1,b.y+1,b.w-2,b.h-2);
+ ctx.fillStyle=b.used?'#b08a55':'#ffd77a';ctx.fillRect(x+7,b.y+7,b.w-14,5);ctx.font='bold 27px Arial';ctx.textAlign='center';ctx.fillStyle=b.used?'#d8c7ad':'#fff2a9';ctx.fillText(b.used?'!':'?',x+b.w/2,b.y+37);
 }
+function powerup(p){const x=p.x-cam,y=p.y;ctx.save();ctx.translate(x+p.w/2,y+p.h/2);ctx.rotate(performance.now()/500);ctx.fillStyle='#65e6ff';ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5,r=i%2?8:14;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.restore()}
 function coin(o){const x=o.x-cam,y=o.y+Math.sin(o.t)*4;ctx.save();ctx.translate(x,y);ctx.scale(.45+.55*Math.abs(Math.cos(o.t*.55)),1);ctx.fillStyle='#ffd43b';ctx.beginPath();ctx.ellipse(0,0,12,16,0,0,7);ctx.fill();ctx.strokeStyle='#b9790b';ctx.lineWidth=2;ctx.stroke();ctx.restore()}
 function enemy(e){const x=e.x-cam;ctx.fillStyle='#6938a8';ctx.beginPath();ctx.roundRect(x,e.y,e.w,e.h,10);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(x+8,e.y+9,9,10);ctx.fillRect(x+24,e.y+9,9,10);ctx.fillStyle='#111';ctx.fillRect(x+11,e.y+12,4,5);ctx.fillRect(x+27,e.y+12,4,5);ctx.fillStyle='#3a225f';ctx.fillRect(x-3,e.y+e.h-6,16,8);ctx.fillRect(x+27,e.y+e.h-6,16,8)}
 function playerDraw(){
- const x=player.x-cam,y=player.y;if(player.inv>0&&Math.floor(player.inv*12)%2===0)return;
+ const x=player.x-cam,y=player.y;if(player.inv>0&&Math.floor(player.inv*12)%2===0)return;if(player.power>0){ctx.save();ctx.shadowColor='#6ff';ctx.shadowBlur=22;}
  ctx.save();ctx.translate(x+player.w/2,y+player.h/2);ctx.scale(player.face,1);
  const bob=player.ground?Math.sin(player.run)*1.5:0;ctx.translate(0,bob);
  ctx.fillStyle='#26344d';ctx.fillRect(-15,5,30,30);ctx.fillStyle='#35a8ff';ctx.fillRect(-15,2,30,25);
  ctx.fillStyle='#ffd0a3';ctx.fillRect(-12,-23,24,25);ctx.fillStyle='#4b2f20';ctx.fillRect(-14,-27,28,8);ctx.fillRect(-16,-22,6,9);
  ctx.fillStyle='#182030';ctx.fillRect(-11,27,10,7);ctx.fillRect(2,27,11,7);
  ctx.fillStyle='#111';ctx.fillRect(5,-16,4,5);ctx.fillStyle='#fff';ctx.fillRect(-8,7,16,4);
- ctx.restore();
+ ctx.restore();if(player.power>0)ctx.restore();
 }
 function drawGoal(){const x=goal.x-cam;ctx.fillStyle='#eee';ctx.fillRect(x,goal.y,7,105);ctx.fillStyle='#ef476f';ctx.beginPath();ctx.moveTo(x+7,goal.y);ctx.lineTo(x+58,goal.y+18);ctx.lineTo(x+7,goal.y+37);ctx.fill();ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x+3.5,goal.y,8,0,7);ctx.fill()}
 function render(){
  drawBG();const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;ctx.save();ctx.translate(sx,sy);
- for(const p of platforms)platform(p);for(const b of blocks)block(b);for(const o of coins)if(!o.got&&o.x-cam>-30&&o.x-cam<W+30)coin(o);for(const e of enemies)if(e.alive)enemy(e);drawGoal();playerDraw();
+ for(const p of platforms)platform(p);for(const b of blocks)block(b);for(const o of coins)if(!o.got&&o.x-cam>-30&&o.x-cam<W+30)coin(o);for(const e of enemies)if(e.alive)enemy(e);for(const p of powerups)powerup(p);drawGoal();playerDraw();
  for(const p of particles){ctx.globalAlpha=Math.max(0,p.life*1.5);ctx.fillStyle=p.color;ctx.fillRect(p.x-cam,p.y,p.s,p.s)}ctx.globalAlpha=1;ctx.restore();
 }
 function loop(t){const dt=(t-last)/1000;last=t;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
