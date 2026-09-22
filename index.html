@@ -2,314 +2,470 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BIG FLAPPY TOWER — TINY SQUARE</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FLAPPY TOWER // SKYLINE</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#2c91ad;font-family:Arial,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#10233a;font-family:Arial,sans-serif;touch-action:none}
 canvas{display:block;width:100%;height:100%}
-#hud{position:fixed;inset:0;pointer-events:none;color:#fff;text-shadow:0 2px 4px #123;z-index:2}
-#brand{position:absolute;top:12px;left:14px;font-weight:900;letter-spacing:2px}
-#stats{position:absolute;top:12px;right:14px;text-align:right;font-size:13px;line-height:1.5}
-#help{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:#173f4acc;padding:7px 11px;border-radius:7px;font-size:12px;white-space:nowrap}
-#screen{position:fixed;inset:0;display:grid;place-items:center;background:#0008;z-index:5}
-.card{width:min(600px,92vw);padding:34px;text-align:center;background:linear-gradient(#eef7f4,#cfe5e3);border:4px solid #173f4c;border-radius:16px;box-shadow:0 18px 60px #0008}
-h1{margin:0 0 10px;color:#173f4c;font-size:clamp(34px,7vw,60px);letter-spacing:2px}
-p{color:#315663;line-height:1.5}
-button{padding:13px 30px;border:3px solid #173f4c;border-radius:8px;background:#ef5d52;color:#fff;font-weight:900;font-size:16px;cursor:pointer}
+#hud{position:fixed;inset:0;pointer-events:none;color:#fff;text-shadow:0 2px 5px #0015;z-index:3}
+#brand{position:absolute;top:12px;left:14px;font-weight:900;letter-spacing:2px;font-size:14px}
+#stats{position:absolute;top:10px;right:14px;text-align:right;font-size:12px;line-height:1.55}
+#room{position:absolute;top:52px;left:14px;font-size:11px;font-weight:900;letter-spacing:1.5px;opacity:.88}
+#help{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:#10283dcc;padding:7px 12px;border:1px solid #ffffff28;border-radius:8px;font-size:11px;white-space:nowrap}
+#toast{position:absolute;top:82px;left:50%;transform:translateX(-50%) translateY(-12px);opacity:0;background:#122c42ee;padding:8px 15px;border:2px solid #ffffff30;border-radius:999px;font-size:11px;font-weight:900;transition:.2s;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#screen{position:fixed;inset:0;display:grid;place-items:center;background:#03111dcc;z-index:6}
+.card{width:min(650px,92vw);padding:34px;text-align:center;background:linear-gradient(145deg,#eef8f5,#c7e4e1);border:3px solid #173f4c;border-radius:18px;box-shadow:0 22px 80px #0009}
+.eyebrow{font-size:11px;font-weight:900;letter-spacing:3px;color:#43717b;margin-bottom:8px}
+h1{margin:0 0 10px;color:#173f4c;font-size:clamp(34px,7vw,62px);letter-spacing:2px;line-height:.95}
+p{color:#315663;line-height:1.5;margin:12px auto 20px;max-width:520px}
+#tips{font-size:11px;opacity:.78;margin-top:12px}
+button{padding:13px 30px;border:3px solid #173f4c;border-radius:9px;background:#ef5d52;color:#fff;font-weight:900;font-size:16px;cursor:pointer}
+#touch{display:none;position:fixed;left:0;right:0;bottom:18px;z-index:4;pointer-events:none;justify-content:space-between;padding:0 18px}
+.touchGroup{display:flex;gap:10px;pointer-events:auto}
+.touchBtn{width:58px;height:50px;border:2px solid #ffffff45;border-radius:12px;background:#10283dcc;color:#fff;font-size:21px;font-weight:900;backdrop-filter:blur(4px)}
+@media (pointer:coarse){#touch{display:flex}#help{bottom:78px}}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 <div id="hud">
-  <div id="brand">BIG FLAPPY TOWER</div>
-  <div id="stats">CHECKPOINT <b id="cp">1</b><br>AIR JUMPS <b id="jumps">3</b>/3</div>
-  <div id="help">A/D or ←/→ MOVE • SPACE / W / ↑ FLAP • R CHECKPOINT</div>
+  <div id="brand">FLAPPY TOWER // SKYLINE</div>
+  <div id="room">ROOM 18 • TRAINING DECK</div>
+  <div id="stats">CHECKPOINT <b id="cp">1</b>/6<br>AIR JUMPS <b id="jumps">3</b>/3<br>DEATHS <b id="deaths">0</b> • <b id="timer">0:00</b></div>
+  <div id="toast">CHECKPOINT SAVED</div>
+  <div id="help">A/D or ←/→ MOVE • SPACE / W / ↑ FLAP • R RESPAWN • P PAUSE</div>
+</div>
+<div id="touch">
+  <div class="touchGroup"><button class="touchBtn" id="leftBtn">←</button><button class="touchBtn" id="rightBtn">→</button></div>
+  <div class="touchGroup"><button class="touchBtn" id="jumpBtn">↑</button></div>
 </div>
 <div id="screen">
   <div class="card">
-    <h1 id="st">BIG FLAPPY TOWER</h1>
-    <p id="msg">Climb the giant tower, chain your air jumps, dodge the red pipes and hazards, and reach the top. Hit the button and rescue Pineapple!</p>
-    <button id="go">START GAME</button>
+    <div class="eyebrow">ORIGINAL PRECISION PLATFORMER</div>
+    <h1 id="st">FLAPPY TOWER</h1>
+    <p id="msg">Climb 18 hand-designed rooms. Learn the jump routes, use your three air jumps, wall-kick off the tower, dodge red pipes and moving hazards, then reach the button and rescue Pineapple.</p>
+    <button id="go">START CLIMB</button>
+    <div id="tips">Designed around short challenge rooms, clear routes, fast respawns, and a difficulty curve.</div>
   </div>
 </div>
 <script>
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
 let W=innerWidth,H=innerHeight,dpr=1;
-function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}addEventListener("resize",resize);
+function resize(){
+  W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+addEventListener("resize",resize);
 
-const G={playing:false,t:0,cam:0,checkpoint:0,keys:{},sectionH:0,totalH:0,spawnGrace:0,runTime:0};
-let player,platforms,hazards,boxes,checkpoints,button,pineapple,audio;
+const G={
+  playing:false,paused:false,t:0,cam:0,checkpoint:17,section:17,
+  deaths:0,runTime:0,deadTimer:0,flash:0,shake:0,toast:0,
+  keys:{},jumpBuffer:0,coyote:0,roomTitle:"TRAINING DECK"
+};
+let player,platforms,hazards,boxes,checkpoints,button,pineapple,particles,audio;
 
+const rooms=[
+  {name:"FINAL TEST",kind:"MASTER",p:[[.07,55,.30],[.52,155,.19],[.25,260,.18],[.62,365,.15],[.35,475,.14],[.68,555,.18]],h:[["pipe",.53,145,.13,0],["blade",.43,325,20],["beam",.17,425,.26]],box:null},
+  {name:"PIPE RUN",kind:"MIXUP",p:[[.63,55,.22],[.38,155,.18],[.08,260,.16],[.48,360,.15],[.73,465,.14],[.30,560,.17]],h:[["pipe",.58,135,.13,0],["pipe",.22,255,.12,1],["blade",.56,420,22]],box:.84},
+  {name:"CROSSCUT",kind:"TIMING",p:[[.10,55,.25],[.48,145,.17],[.72,245,.14],[.31,345,.16],[.08,450,.14],[.55,555,.17]],h:[["beam",.42,210,.28],["beam",.16,385,.35],["blade",.63,500,20]],box:.86},
+  {name:"RED PIPEWORK",kind:"PIPE",p:[[.70,55,.20],[.40,150,.15],[.12,250,.16],[.52,350,.15],[.76,450,.13],[.30,555,.16]],h:[["pipe",.52,115,.14,0],["pipe",.18,315,.12,0],["beam",.38,420,.25]],box:null},
+  {name:"WALL RHYTHM",kind:"WALL",p:[[.08,50,.20],[.34,160,.16],[.64,270,.14],[.35,380,.13],[.67,485,.12],[.18,565,.14]],h:[["blade",.50,215,24],["blade",.50,430,26]],box:.82},
+  {name:"LOW CEILING",kind:"CONTROL",p:[[.62,55,.22],[.32,145,.18],[.08,245,.15],[.42,345,.15],[.70,445,.14],[.30,555,.16]],h:[["beam",.20,205,.32],["pipe",.58,330,.13,0],["beam",.42,500,.28]],box:null},
+  {name:"SAW GALLERY",kind:"MOVING",p:[[.08,55,.22],[.40,150,.16],[.72,250,.14],[.48,350,.15],[.14,455,.14],[.58,555,.15]],h:[["blade",.58,205,22],["blade",.32,310,22],["blade",.62,440,25]],box:.84},
+  {name:"PIPE MAZE",kind:"PIPE",p:[[.68,55,.19],[.45,145,.15],[.16,245,.15],[.60,350,.13],[.25,455,.13],[.70,560,.14]],h:[["pipe",.54,120,.13,0],["pipe",.25,275,.12,1],["pipe",.56,420,.13,0]],box:null},
+  {name:"LASER LADDER",kind:"TIMING",p:[[.08,55,.25],[.42,150,.16],[.70,250,.14],[.32,350,.15],[.08,455,.14],[.52,560,.16]],h:[["beam",.36,190,.25],["beam",.60,300,.20],["beam",.22,455,.35]],box:.86},
+  {name:"AIR CONTROL",kind:"FLAP",p:[[.62,55,.21],[.26,150,.16],[.52,255,.14],[.76,355,.13],[.35,460,.12],[.10,565,.15]],h:[["blade",.50,225,22],["beam",.14,365,.32],["pipe",.57,475,.12,0]],box:.82},
+  {name:"TWIN WALLS",kind:"WALL",p:[[.10,55,.19],[.34,155,.14],[.62,255,.13],[.38,355,.12],[.68,460,.12],[.24,565,.13]],h:[["blade",.50,205,24],["beam",.20,430,.38]],box:null},
+  {name:"PIPE + BEAM",kind:"MIXUP",p:[[.68,55,.19],[.44,145,.14],[.14,250,.14],[.52,355,.13],[.75,460,.12],[.31,565,.13]],h:[["pipe",.56,125,.12,0],["beam",.18,245,.40],["pipe",.28,365,.12,1],["blade",.64,500,22]],box:.84},
+  {name:"BLIND CORNERS",kind:"ROUTE",p:[[.08,55,.22],[.35,155,.15],[.72,250,.13],[.44,350,.13],[.14,450,.12],[.60,560,.14]],h:[["beam",.45,220,.23],["pipe",.20,335,.12,0],["blade",.52,485,25]],box:null},
+  {name:"RED SHIFT",kind:"PIPE",p:[[.72,55,.18],[.50,150,.13],[.18,250,.13],[.40,350,.12],[.72,450,.11],[.24,560,.13]],h:[["pipe",.58,115,.12,0],["pipe",.24,285,.11,0],["pipe",.52,455,.11,1]],box:.86},
+  {name:"FINAL CHECK",kind:"GAUNTLET",p:[[.08,55,.24],[.36,155,.14],[.68,255,.12],[.44,355,.12],[.12,455,.11],[.58,565,.13]],h:[["beam",.28,185,.36],["blade",.50,305,26],["pipe",.58,420,.11,0],["beam",.10,525,.42]],box:null},
+  {name:"FIRST WALLS",kind:"WALL",p:[[.62,55,.23],[.38,155,.18],[.12,255,.17],[.55,355,.15],[.75,455,.14],[.30,560,.16]],h:[["blade",.50,315,21]],box:.84},
+  {name:"FLAP BASICS",kind:"FLAP",p:[[.10,55,.27],[.45,150,.20],[.72,250,.17],[.32,350,.17],[.08,455,.16],[.55,560,.18]],h:[["beam",.28,405,.28]],box:.84},
+  {name:"TRAINING DECK",kind:"LEARN",p:[[.08,55,.32],[.48,155,.22],[.23,270,.20],[.62,385,.18],[.34,500,.20],[.68,575,.18]],h:[],box:.82}
+];
+
+const sectionCount=rooms.length;
+let sectionH;
+
+function worldY(section,localHeight){
+  const base=(sectionCount-section-1)*sectionH;
+  return base+sectionH-localHeight;
+}
 function buildWorld(){
-  G.sectionH=Math.max(620,H*.98);
-  const sections=24, towerL=Math.max(28,W*.045), towerR=Math.min(W-28,W*.955), tw=towerR-towerL;
-  G.totalH=sections*G.sectionH;
-  platforms=[];hazards=[];boxes=[];checkpoints=[];
-  // Hand-authored room patterns: platforms are staggered vertically and horizontally
-  // so the route reads like a sequence of deliberate jumps, not a pile of rectangles.
-  // Hand-designed tower rooms. Each room is a small jump sequence with
-  // intentionally separated landings; later rooms require more air-jump control.
-  const rooms=[
-    [[.06,70,.22],[.34,165,.18],[.64,260,.16],[.40,355,.18],[.10,450,.17],[.57,550,.16]],
-    [[.64,70,.19],[.39,160,.16],[.12,250,.18],[.50,345,.16],[.73,440,.15],[.31,545,.17]],
-    [[.14,68,.18],[.48,155,.17],[.72,245,.15],[.27,335,.16],[.56,430,.15],[.08,535,.17]],
-    [[.72,70,.17],[.52,160,.16],[.20,250,.18],[.43,340,.15],[.76,435,.15],[.30,545,.16]],
-    [[.08,70,.17],[.30,155,.14],[.62,245,.14],[.43,335,.13],[.72,430,.13],[.18,535,.14]],
-    [[.72,70,.16],[.52,155,.13],[.22,245,.13],[.08,335,.12],[.48,430,.13],[.70,535,.13]]
-  ];
-  for(let s=0;s<sections;s++){
-    const base=G.totalH-(s+1)*G.sectionH, d=s/sections, pat=rooms[s%rooms.length];
-    if(s!==23) pat.forEach((a,i)=>{
-      const tighten=Math.max(.58,1-d*.40);
-      platforms.push({x:towerL+tw*a[0],y:base+G.sectionH-a[1],w:Math.max(46,tw*a[2]*tighten),h:18,section:s,i});
+  sectionH=Math.max(560,H*.93);
+  const L=Math.max(28,W*.045),R=Math.min(W-28,W*.955),tw=R-L;
+  platforms=[];hazards=[];boxes=[];checkpoints=[];particles=[];
+  for(let s=0;s<sectionCount;s++){
+    const room=rooms[s];
+    room.p.forEach((q,i)=>{
+      platforms.push({x:L+tw*q[0],y:worldY(s,q[1]),w:Math.max(48,tw*q[2]),h:18,section:s,index:i});
     });
-    if(s<sections-1 && (s<7 || s%3===0))
-      boxes.push({x:towerL+tw*(s%2?.43:.57),y:base+115,w:30,h:26,used:false,phase:s});
-    if(s>0 && s%3===0)
-      checkpoints.push({x:towerL+tw*(s%2?.74:.10),y:base+62,w:54,h:12,section:s});
-    // Progressive hazards: first isolated bars, then combinations and moving blades.
-    if(s>=3) hazards.push({type:"beam",x:towerL+tw*(s%2?.08:.45),y:base+G.sectionH-235,w:tw*.32,h:14,phase:s});
-    if(s>=7) hazards.push({type:"beam",x:towerL+tw*(s%2?.48:.12),y:base+G.sectionH-425,w:tw*.25,h:12,phase:s+2});
-    if(s>=9 && s%2===1) hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-325,r:20+Math.min(10,Math.floor(s/4)),phase:s});
-    if(s>=12 && s%3===0) hazards.push({type:"pipe",x:towerL+tw*(s%2?.72:.18),y:base+G.sectionH-185,w:44,h:125});
-    if(s>=15) hazards.push({type:"blade",x:towerL+tw*(s%2?.28:.66),y:base+G.sectionH-485,r:23,phase:s+6});
-    if(s>=18){
-      hazards.push({type:"beam",x:towerL+tw*.22,y:base+G.sectionH-115,w:tw*.56,h:12,phase:s+9});
-      hazards.push({type:"pipe",x:towerL+tw*(s%2?.48:.48),y:base+G.sectionH-255,w:48,h:145});
-    }
-    if(s>=21){
-      hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-175,r:28,phase:s+12});
-      hazards.push({type:"beam",x:towerL+tw*.08,y:base+G.sectionH-530,w:tw*.84,h:11,phase:s+14});
-    }
-  }
-  // Validate horizontal separation inside each room so platforms never stack into each other.
-  for(let s=0;s<23;s++){
-    const room=platforms.filter(p=>p.section===s).sort((a,b)=>a.y-b.y);
-    for(let i=1;i<room.length;i++){
-      const a=room[i-1],b=room[i];
-      if(b.x<a.x+a.w+18){
-        b.x=Math.min(towerR-b.w, a.x+a.w+18);
-        if(b.x<towerL) b.x=towerL;
+    for(const h of room.h){
+      if(h[0]==="pipe"){
+        hazards.push({type:"pipe",x:L+tw*h[1],y:worldY(s,h[2]),w:Math.max(42,tw*h[3]),h:Math.min(150,Math.max(95,h[2]*.58)),dir:h[4],phase:s*2});
+      }else if(h[0]==="beam"){
+        hazards.push({type:"beam",x:L+tw*h[1],y:worldY(s,h[2]),w:Math.max(90,tw*h[3]),h:13,phase:s});
+      }else{
+        hazards.push({type:"blade",x:L+tw*h[1],y:worldY(s,h[2]),r:h[3],phase:s});
       }
     }
+    if(room.box!==null){
+      boxes.push({x:L+tw*room.box,y:worldY(s,315),w:32,h:28,used:false,section:s});
+    }
+    if(s!==sectionCount-1 && s%3===0){
+      const cPlat=platforms.find(p=>p.section===s&&p.index===5)||platforms.find(p=>p.section===s);
+      checkpoints.push({section:s,x:cPlat.x+Math.max(0,cPlat.w-58),y:cPlat.y-20,w:54,h:13,active:false});
+    }
   }
-  // Bottom starting room: deliberately safe and compact.
-  const starter=[
-    {x:towerL+tw*.08,y:G.totalH-70,w:tw*.28,h:18,section:23,i:100},
-    {x:towerL+tw*.52,y:G.totalH-185,w:tw*.22,h:18,section:23,i:101},
-    {x:towerL+tw*.28,y:G.totalH-305,w:tw*.20,h:18,section:23,i:102},
-    {x:towerL+tw*.62,y:G.totalH-425,w:tw*.18,h:18,section:23,i:103}
-  ];
-  platforms.push(...starter);
-  button={x:W/2-30,y:48,w:60,h:26,hit:false};
-  pineapple={x:W/2,y:120,collected:false};
-  const sp=starter[0];
-  player={x:sp.x+sp.w/2-12,y:sp.y-24,w:24,h:24,vx:0,vy:0,onGround:true,airJumps:3,flapFx:0};
-  G.spawnGrace=90;
-  G.checkpoint=23;
-  G.cam=Math.max(0,G.totalH-H);
+  const start=platforms.find(p=>p.section===17&&p.index===0);
+  player={x:start.x+start.w*.5-12,y:start.y-26,w:24,h:24,vx:0,vy:0,onGround:true,airJumps:3,flapFx:0,face:1,groundFrames:0};
+  button={x:W/2-34,y:worldY(0,570)-18,w:68,h:28,hit:false};
+  pineapple={x:W/2,y:worldY(0,570)-70,collected:false};
+  G.checkpoint=17;G.section=17;G.cam=(sectionCount-18)*sectionH;G.paused=false;
+  G.spawn={x:player.x,y:player.y,section:17};
 }
+function restart(){
+  buildWorld();
+  G.playing=true;G.t=0;G.runTime=0;G.deaths=0;G.flash=0;G.shake=0;G.toast=0;
+  document.getElementById("screen").style.display="none";
+  music();
+  if(audio&&audio.state==="suspended")audio.resume();
+  toast("CLIMB STARTED");
+}
+function saveCheckpoint(c){
+  if(c.section>=G.checkpoint)return;
+  G.checkpoint=c.section;
+  G.spawn={x:c.x+c.w*.5-player.w*.5,y:c.y-player.h-3,section:c.section};
+  c.active=true;
+  toast("CHECKPOINT SAVED");
+}
+function respawn(){
+  player.x=G.spawn.x;player.y=G.spawn.y;player.vx=0;player.vy=0;player.airJumps=3;player.onGround=true;
+  player.groundFrames=5;G.section=G.spawn.section;G.deadTimer=0;G.flash=12;
+  G.cam=(sectionCount-G.section-1)*sectionH;
+}
+function die(){
+  if(G.deadTimer>0)return;
+  G.deaths++;G.deadTimer=22;G.flash=18;G.shake=8;
+  burst(player.x+12,player.y+12,14);
+}
+function win(){
+  G.playing=false;
+  document.getElementById("st").textContent="PINEAPPLE RESCUED!";
+  document.getElementById("msg").textContent="You cleared all 18 rooms, hit the final button, and made it to the top.";
+  document.getElementById("go").textContent="CLIMB AGAIN";
+  document.getElementById("tips").textContent="Run time: "+formatTime(G.runTime)+" • Deaths: "+G.deaths;
+  document.getElementById("screen").style.display="grid";
+  burst(pineapple.x,pineapple.y,36);
+}
+function toast(text){
+  const el=document.getElementById("toast");el.textContent=text;el.classList.add("show");G.toast=110;
+}
+function formatTime(sec){
+  const m=Math.floor(sec/60),s=Math.floor(sec%60).toString().padStart(2,"0");
+  return m+":"+s;
+}
+
 function music(){
   if(audio)return;
   try{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
     audio=new AC();
-    const master=audio.createGain();master.gain.value=.035;master.connect(audio.destination);
-    const themes=[
-      {tempo:260,mel:[392,440,494,523,494,440,392,330,392,494,523,587,523,494,440,392,330,392,440,494],bass:[98,110,123.47,130.81,123.47,110,98,82.41]},
-      {tempo:220,mel:[330,392,440,494,587,494,440,392,330,294,330,392,440,494,523,494,440,392,330,392],bass:[82.41,98,110,123.47,110,98,82.41,73.42]},
-      {tempo:190,mel:[523,587,659.25,698.46,659.25,587,523,440,494,523,587,659.25,698.46,783.99,698.46,659.25,587,523,494,440],bass:[130.81,146.83,164.81,174.61,164.81,146.83,130.81,110]},
-      {tempo:170,mel:[659.25,587,523,494,523,587,659.25,783.99,659.25,587,523,440,494,523,587,659.25,783.99,659.25,587,523],bass:[164.81,146.83,130.81,110,130.81,146.83,164.81,196]}
-    ];
-    let step=0,theme=0;
+    const master=audio.createGain();master.gain.value=.028;master.connect(audio.destination);
+    const notes=[392,440,494,523,494,440,392,330,392,494,523,587,523,494,440,392];
+    const bass=[98,110,123.47,130.81,123.47,110,98,82.41];
+    let step=0;
     function tone(freq,dur,type,vol,when){
       const o=audio.createOscillator(),g=audio.createGain();
-      o.type=type;o.frequency.value=freq;
-      g.gain.setValueAtTime(.0001,when);
-      g.gain.exponentialRampToValueAtTime(vol,when+.018);
+      o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.0001,when);
+      g.gain.exponentialRampToValueAtTime(vol,when+.015);
       g.gain.exponentialRampToValueAtTime(.0001,when+dur);
       o.connect(g);g.connect(master);o.start(when);o.stop(when+dur+.02);
     }
     function tick(){
       if(!audio||audio.state!=="running")return;
-      const t=themes[theme],now=audio.currentTime+.01,i=step%t.mel.length;
-      tone(t.mel[i],.24,"triangle",.16,now);
-      tone(t.bass[step%t.bass.length],.42,"sine",.12,now);
-      const harmony=[1.25,1.5,1.333,1.5][(Math.floor(step/5)+theme)%4];
-      if(step%2===0)tone(t.mel[(i+3)%t.mel.length]*harmony,.18,"triangle",.042,now+.015);
-      if(step%4===0){
-        tone(t.bass[(step+1)%t.bass.length]*2,.55,"sine",.045,now);
-        tone(t.mel[(i+7)%t.mel.length]/2,.30,"square",.018,now);
-      }
-      if(step%20===0){
-        tone(t.bass[0]/2,.16,"sine",.035,now);
-      }
-      if(step%8===0){
-        tone(82,.07,"square",.022,now);
-        tone(123.47,.11,"sine",.022,now+.03);
-      }
-      step++;
-      if(step%20===0)theme=(theme+1)%themes.length;
-      setTimeout(tick,t.tempo);
+      const now=audio.currentTime+.01,i=step%notes.length;
+      tone(notes[i],.22,"triangle",.14,now);
+      tone(bass[step%bass.length],.40,"sine",.10,now);
+      if(step%2===0)tone(notes[(i+4)%notes.length]*1.5,.16,"triangle",.035,now+.02);
+      if(step%4===0)tone(bass[(step+2)%bass.length]*2,.18,"square",.012,now);
+      step++;setTimeout(tick,210);
     }
     tick();
   }catch(e){}
 }
-function start(){buildWorld();G.playing=true;G.t=0;G.runTime=0;G.spawnGrace=120;document.getElementById("screen").style.display="none";music();if(audio&&audio.state==="suspended")audio.resume()}
-function checkpointRespawn(){const s=G.checkpoint;buildWorld();G.checkpoint=s;G.runTime=0;const roomPlatforms=platforms.filter(q=>q.section===s);const p=roomPlatforms[0]||platforms.find(q=>q.i===100);if(!p)return;player.x=p.x+p.w*.5-player.w*.5;player.y=p.y-player.h-2;player.vx=0;player.vy=0;player.airJumps=3;G.spawnGrace=90;G.cam=Math.max(0,Math.min(G.totalH-H,player.y-H*.58));G.playing=true;document.getElementById("screen").style.display="none"}
-function die(){G.playing=false;document.getElementById("st").textContent="BACK TO CHECKPOINT";document.getElementById("msg").textContent="You hit a hazard. The tower is built from repeatable screen-sized challenge sections, so try the same section again.";document.getElementById("go").textContent="RESPAWN";document.getElementById("screen").style.display="grid"}
-function win(){G.playing=false;document.getElementById("st").textContent="PINEAPPLE RESCUED!";document.getElementById("msg").textContent="You reached the top of the tower and hit the final button.";document.getElementById("go").textContent="PLAY AGAIN";document.getElementById("screen").style.display="grid"}
 
 function jump(){
-  if(!G.playing)return;
-  if(player.onGround){player.vy=-12.5;player.onGround=false;player.airJumps=3;player.flapFx=10}
-  else if(player.airJumps>0){player.vy=-10.8;player.airJumps--;player.flapFx=10}
+  if(!G.playing||G.paused||G.deadTimer>0)return;
+  G.jumpBuffer=8;
 }
-addEventListener("keydown",e=>{
+function doJump(){
+  if(player.onGround||player.groundFrames>0||G.coyote>0){
+    player.vy=-12.7;player.onGround=false;player.airJumps=3;player.flapFx=9;G.coyote=0;G.jumpBuffer=0;burst(player.x+12,player.y+24,5);return;
+  }
+  if(player.airJumps>0){
+    player.vy=-10.9;player.airJumps--;player.flapFx=10;G.jumpBuffer=0;burst(player.x+12,player.y+22,4);
+  }
+}
+function keyDown(e){
   const k=e.key.toLowerCase();G.keys[k]=true;
   if([" ","arrowup","w"].includes(k)){e.preventDefault();if(!e.repeat)jump()}
-  if(k==="r"){e.preventDefault();checkpointRespawn()}
-});
+  if(k==="r"){e.preventDefault();if(G.playing)respawn()}
+  if(k==="p"||k==="escape"){e.preventDefault();if(G.playing)G.paused=!G.paused}
+}
+addEventListener("keydown",keyDown);
 addEventListener("keyup",e=>G.keys[e.key.toLowerCase()]=false);
 canvas.addEventListener("pointerdown",jump);
-document.getElementById("go").onclick=()=>document.getElementById("go").textContent==="RESPAWN"?checkpointRespawn():start();
+document.getElementById("go").onclick=restart;
+
+function holdButton(id,key){
+  const el=document.getElementById(id);
+  const on=e=>{e.preventDefault();G.keys[key]=true};
+  const off=e=>{e.preventDefault();G.keys[key]=false};
+  el.addEventListener("pointerdown",on);el.addEventListener("pointerup",off);el.addEventListener("pointercancel",off);el.addEventListener("pointerleave",off);
+}
+holdButton("leftBtn","arrowleft");holdButton("rightBtn","arrowright");
+document.getElementById("jumpBtn").addEventListener("pointerdown",e=>{e.preventDefault();jump()});
 
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function burst(x,y,n){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,v=1+Math.random()*3;
+    particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,r:2+Math.random()*3,life:25+Math.random()*25});
+  }
+}
+function updateParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.08;p.life--;
+    if(p.life<=0)particles.splice(i,1);
+  }
+}
 
 function update(){
-  if(!G.playing)return;
+  updateParticles();
+  if(!G.playing||G.paused)return;
+  if(G.deadTimer>0){G.deadTimer--;if(G.deadTimer===0)respawn();return}
   G.t+=1/60;G.runTime+=1/60;
+  if(G.toast>0){G.toast--;if(G.toast===0)document.getElementById("toast").classList.remove("show")}
+  if(G.jumpBuffer>0)G.jumpBuffer--;
   const left=G.keys.a||G.keys.arrowleft,right=G.keys.d||G.keys.arrowright;
-  player.vx+=(right-left)*.72;player.vx*=.84;player.vx=Math.max(-6,Math.min(6,player.vx));
-  const oldBottom=player.y+player.h;
-  player.vy+=.52;player.x+=player.vx;player.y+=player.vy;
-  // Keep the opening spawn locked safely to its starter platform until the player moves.
-  if(G.spawnGrace>0 && player.y>G.totalH-140 && Math.abs(player.x-(platforms.find(p=>p.i===100)?.x||0))<140){const sp=platforms.find(p=>p.i===100);if(sp){player.y=sp.y-player.h;player.vy=0;player.onGround=true;player.airJumps=3;}}
+  const dir=(right?1:0)-(left?1:0);
+  player.vx+=dir*.78;
+  if(!dir)player.vx*=.82;else player.vx*=.90;
+  player.vx=Math.max(-6.4,Math.min(6.4,player.vx));
+  if(dir)player.face=dir;
+  const oldY=player.y,oldBottom=player.y+player.h;
+  player.vy+=.55;
+  if(player.vy>13)player.vy=13;
+  player.x+=player.vx;player.y+=player.vy;
   const L=Math.max(18,W*.025),R=Math.min(W-18,W*.975);
-  player.x=Math.max(L,Math.min(R-player.w,player.x));
-  if(player.flapFx>0)player.flapFx--;
+  if(player.x<L){player.x=L;player.vx=0;if(player.vy>1&&(left||right)){player.vy=-9.7;player.vx=5.8;burst(player.x,player.y+12,5)}}
+  if(player.x+player.w>R){player.x=R-player.w;player.vx=0;if(player.vy>1&&(left||right)){player.vy=-9.7;player.vx=-5.8;burst(player.x+24,player.y+12,5)}}
   player.onGround=false;
   for(const p of platforms){
-    if(player.vy>=0&&player.x+player.w>p.x&&player.x<p.x+p.w&&oldBottom<=p.y&&player.y+player.h>=p.y){
-      player.y=p.y-player.h;player.vy=0;player.onGround=true;player.airJumps=3;break;
+    if(p.section!==G.section)continue;
+    if(player.vy>=0&&player.x+player.w>p.x&&player.x<p.x+p.w&&oldBottom<=p.y+4&&player.y+player.h>=p.y){
+      player.y=p.y-player.h;player.vy=0;player.onGround=true;player.airJumps=3;player.groundFrames=5;break;
     }
   }
-  // Wall jump, but keep it snappy instead of floaty.
-  if(!player.onGround&&(player.x<=L+1||player.x+player.w>=R-1)&&player.vy>0&&(left||right)){player.vy=-9.5;player.vx=right?-6:6}
+  if(!player.onGround){G.coyote=Math.max(0,(G.coyote||0)-1)}else G.coyote=6;
+  if(G.jumpBuffer>0)doJump();
+  if(player.flapFx>0)player.flapFx--;
+  if(player.groundFrames>0)player.groundFrames--;
   for(const b of boxes){
-    const by=b.y+Math.sin(G.t*2+b.phase)*7;
-    const box={x:b.x,y:by,w:b.w,h:b.h};
-    if(!b.used&&overlap(player,box)){b.used=true;player.airJumps=3;player.vy=-9}
+    if(b.section!==G.section||b.used)continue;
+    const by=b.y+Math.sin(G.t*2+b.section)*6,box={x:b.x,y:by,w:b.w,h:b.h};
+    if(overlap(player,box)){b.used=true;player.airJumps=3;player.vy=-8.5;burst(b.x+16,by+14,8)}
   }
-  if(G.spawnGrace>0)G.spawnGrace--;
   for(const h of hazards){
-    if(G.spawnGrace<=0){
-      if(h.type==="beam"&&overlap(player,{x:h.x,y:h.y,w:h.w,h:h.h})){die();return}
-      if(h.type==="pipe"&&overlap(player,{x:h.x,y:h.y,w:h.w,h:h.h})){die();return}
-      if(h.type==="blade"){const sy=h.y+Math.sin(G.t*2+h.phase)*24;if(Math.hypot(player.x+10-h.x,player.y+10-sy)<h.r+9){die();return}}
+    if(h.type==="blade"){
+      if(h.y-G.cam<-80||h.y-G.cam>H+80)continue;
+      const sx=h.x+Math.sin(G.t*2.1+h.phase)*38,sy=h.y+Math.cos(G.t*1.7+h.phase)*18;
+      if(Math.hypot(player.x+12-sx,player.y+12-sy)<h.r+10){die();return}
+    }else if(h.section===G.section){
+      let box;
+      if(h.type==="pipe"){
+        const y=h.dir===0?h.y-h.h:h.y;
+        box={x:h.x,y:y,w:h.w,h:h.h};
+      }else box={x:h.x,y:h.y,w:h.w,h:h.h};
+      if(overlap(player,box)){die();return}
     }
   }
   for(const c of checkpoints){
-    if(player.y<c.y+35&&player.y>c.y-40&&player.x+player.w>c.x&&player.x<c.x+c.w)G.checkpoint=Math.min(G.checkpoint,c.section);
+    if(player.y<c.y+42&&player.y>c.y-45&&player.x+player.w>c.x&&player.x<c.x+c.w)saveCheckpoint(c);
   }
-  // The finish is deliberately gated: reaching the top section alone cannot
-  // instantly end the run. The player must climb far enough to activate the
-  // late checkpoint, then physically hit the final button and pineapple.
-  if(player.y<G.sectionH*1.05 && G.checkpoint<=3){
-    if(overlap(player,button)){button.hit=true}
-    if(button.hit&&overlap(player,pineappleBox())){pineapple.collected=true;win();return}
+  const newSection=Math.max(0,Math.min(sectionCount-1,Math.floor((G.totalH()-player.y)/sectionH)));
+  if(newSection!==G.section){
+    if(newSection<G.section){G.section=newSection;G.roomTitle=rooms[newSection].name;toast("ROOM "+(sectionCount-newSection)+" • "+rooms[newSection].name)}
+    else G.section=newSection;
   }
-  if(player.y>G.totalH+150 && G.spawnGrace<=0){checkpointRespawn();return}
-  const target=H*.55;
-  G.cam=player.y-target;
-  G.cam=Math.max(0,Math.min(G.totalH-H,G.cam));
-  document.getElementById("cp").textContent=24-G.checkpoint;
+  if(player.y>G.totalH()+120)die();
+  if(G.section===0&&player.y<worldY(0,500)+40&&G.checkpoint<=3){
+    if(overlap(player,button)){button.hit=true;toast("FINAL BUTTON HIT")}
+    if(button.hit&&overlap(player,{x:pineapple.x-22,y:pineapple.y-26,w:44,h:55})){pineapple.collected=true;win();return}
+  }
+  const targetCam=(sectionCount-G.section-1)*sectionH;
+  G.cam+=(targetCam-G.cam)*.14;
+  if(G.shake>0)G.shake*=.86;
+  document.getElementById("cp").textContent=(sectionCount-G.checkpoint)/3+1;
   document.getElementById("jumps").textContent=player.airJumps;
+  document.getElementById("deaths").textContent=G.deaths;
+  document.getElementById("timer").textContent=formatTime(G.runTime);
+  document.getElementById("room").textContent="ROOM "+(sectionCount-G.section)+" • "+rooms[G.section].name+" // "+rooms[G.section].kind;
 }
-function pineappleBox(){return{x:pineapple.x-20,y:pineapple.y-25,w:40,h:55}}
+function GtotalH(){return sectionCount*sectionH}
+G.totalH=GtotalH;
 
+function drawBackground(L,R){
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,"#081a30");bg.addColorStop(.48,"#164866");bg.addColorStop(1,"#2a7d91");
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  for(let i=0;i<9;i++){
+    const x=(i*137-(G.cam*.08)%137);ctx.fillStyle="#7de2e222";ctx.fillRect(x,0,2,H);
+  }
+  for(let i=0;i<8;i++){
+    const x=(i*173+(G.cam*.16)%173);const y=80+i*90;
+    ctx.fillStyle="#9ee8e833";ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
+  }
+  ctx.fillStyle="#071b2b";ctx.fillRect(L-24,0,24,H);ctx.fillRect(R,0,24,H);
+  ctx.fillStyle="#d2b94e";ctx.fillRect(L-18,0,18,H);ctx.fillRect(R,0,18,H);
+  ctx.fillStyle="#6f9b60";ctx.fillRect(L-9,0,9,H);ctx.fillRect(R,0,9,H);
+  for(let y=-((G.cam)%32);y<H+32;y+=32){
+    ctx.fillStyle="#9fc56b";ctx.fillRect(L-15,y,7,11);ctx.fillRect(R+8,y+16,7,11);
+  }
+}
 function draw(){
   const L=Math.max(18,W*.025),R=Math.min(W-18,W*.975),tw=R-L;
-  const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#74d4e3");bg.addColorStop(.55,"#4aaec2");bg.addColorStop(1,"#318fa8");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-  // Wide, bright tower chamber with subtle depth.
-  const chamber=ctx.createLinearGradient(L,0,R,0);chamber.addColorStop(0,"#52b9c9");chamber.addColorStop(.5,"#67c5d1");chamber.addColorStop(1,"#4daabd");ctx.fillStyle=chamber;ctx.fillRect(L,0,R-L,H);
-  ctx.strokeStyle="#ffffff20";ctx.lineWidth=2;
-  for(let x=L+45;x<R;x+=90){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
-  // Decorative horizontal screen seams.
-  for(let y=-(G.cam%G.sectionH);y<H+G.sectionH;y+=G.sectionH){ctx.fillStyle="#ffffff28";ctx.fillRect(L,y,R-L,4)}
-  // chunky tower walls
-  ctx.fillStyle="#e6c85d";ctx.fillRect(L-18,0,18,H);ctx.fillRect(R,0,18,H);
-  ctx.fillStyle="#6d985c";ctx.fillRect(L-10,0,10,H);ctx.fillRect(R,0,10,H);
-  for(let y=-(G.cam%30);y<H+30;y+=30){ctx.fillStyle="#8ab56b";ctx.fillRect(L-15,y,10,11);ctx.fillRect(R+5,y,10,11)}
-  // small bolts on the tower walls
-  ctx.fillStyle="#f7df83";for(let y=18;y<H;y+=52){ctx.beginPath();ctx.arc(L-9,y,2,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(R+9,y+20,2,0,Math.PI*2);ctx.fill()}
-  // Dark-blue industrial blocks, matching the chunky maze-like reference style.
-  const blockY=((G.totalH-G.cam)%G.sectionH)-G.sectionH;
-  for(let yy=blockY;yy<H+G.sectionH;yy+=G.sectionH){
-    ctx.fillStyle="#315b7c";
-    ctx.fillRect(L+tw*.08,yy+90,tw*.22,28);
-    ctx.fillRect(L+tw*.55,yy+250,tw*.28,28);
-    ctx.fillStyle="#214b6d";
-    ctx.fillRect(L+tw*.08,yy+90,tw*.22,6);
-    ctx.fillRect(L+tw*.55,yy+250,tw*.28,6);
+  drawBackground(L,R);
+  const base=(sectionCount-G.section-1)*sectionH;
+  ctx.save();
+  if(G.shake>1)ctx.translate((Math.random()-.5)*G.shake,(Math.random()-.5)*G.shake);
+  // Room architecture
+  ctx.fillStyle="#5bb8c8";ctx.fillRect(L,0,R-L,H);
+  ctx.fillStyle="#67c6d1";
+  for(let x=L+35;x<R;x+=86){ctx.fillRect(x,0,2,H)}
+  for(let y=0;y<H;y+=70){ctx.fillStyle="#ffffff12";ctx.fillRect(L,y,R-L,2)}
+  // ceiling/floor accents
+  ctx.fillStyle="#214f6a";ctx.fillRect(L,0,R-L,18);ctx.fillRect(L,H-18,R-L,18);
+  ctx.fillStyle="#4d7e92";ctx.fillRect(L,18,R-L,4);ctx.fillRect(L,H-22,R-L,4);
+
+  // Section title marker
+  ctx.fillStyle="#173f4ccc";ctx.font="900 11px Arial";
+  ctx.fillText(rooms[G.section].kind+" / "+rooms[G.section].name,L+14,42);
+
+  // Decorative machine blocks, placed away from the playable route.
+  const deco=[[.07,88,.20,22],[.68,205,.20,22],[.08,430,.18,22],[.63,520,.22,22]];
+  for(const d of deco){
+    ctx.fillStyle="#254f70";ctx.fillRect(L+tw*d[0],d[1],tw*d[2],d[3]);
+    ctx.fillStyle="#35698a";ctx.fillRect(L+tw*d[0],d[1],tw*d[2],5);
+    ctx.fillStyle="#86c2d1";
+    for(let x=L+tw*d[0]+10;x<L+tw*(d[0]+d[2])-4;x+=22){ctx.fillRect(x,d[1]+10,7,3)}
   }
-  // screen boundary
-  const section=Math.max(0,Math.min(23,Math.floor(player.y/G.sectionH)));
-  const climb=Math.max(0,Math.min(23,23-section));
-  ctx.fillStyle="#ffffff18";ctx.fillRect(L+1,H*.02,R-L-2,3);
-  ctx.fillStyle="#173f4ccc";ctx.font="bold 11px Arial";ctx.fillText("TOWER "+(climb+1)+" / 24",L+12,28);
 
   for(const p of platforms){
-    const y=p.y-G.cam;if(y<-35||y>H+35)continue;
-    ctx.fillStyle="#4f754d";ctx.fillRect(p.x-3,y-2,p.w+6,p.h+5);
-    ctx.fillStyle="#d9b94f";ctx.fillRect(p.x,y,p.w,p.h);
-    ctx.fillStyle="#f1d36a";ctx.fillRect(p.x+3,y+3,p.w-6,5);
-    ctx.strokeStyle="#47744d";ctx.lineWidth=3;ctx.strokeRect(p.x,y,p.w,p.h);
+    if(p.section!==G.section)continue;
+    const y=p.y-G.cam;
+    ctx.fillStyle="#385c48";ctx.fillRect(p.x-3,y-2,p.w+6,p.h+5);
+    ctx.fillStyle="#d8b84e";ctx.fillRect(p.x,y,p.w,p.h);
+    ctx.fillStyle="#f4d66f";ctx.fillRect(p.x+3,y+2,p.w-6,5);
+    ctx.fillStyle="#4c7650";ctx.fillRect(p.x,y+p.h-4,p.w,4);
+    ctx.strokeStyle="#31583e";ctx.lineWidth=2;ctx.strokeRect(p.x,y,p.w,p.h);
   }
+
+  for(const b of boxes){
+    if(b.section!==G.section||b.used)continue;
+    const y=b.y-G.cam+Math.sin(G.t*2+b.section)*6;
+    ctx.fillStyle="#d59b32";ctx.fillRect(b.x,y,b.w,b.h);
+    ctx.fillStyle="#f7d45b";ctx.fillRect(b.x+3,y+3,b.w-6,5);
+    ctx.strokeStyle="#765a28";ctx.lineWidth=3;ctx.strokeRect(b.x,y,b.w,b.h);
+    ctx.fillStyle="#fff0ae";ctx.font="900 17px Arial";ctx.fillText("↑",b.x+9,y+20);
+  }
+
   for(const h of hazards){
-    if(h.type==="beam"){
-      const y=h.y-G.cam;ctx.fillStyle="#e4544d";ctx.fillRect(h.x,y,h.w,h.h);
-      ctx.fillStyle="#ff8072";ctx.fillRect(h.x,y,h.w,4);
-      ctx.fillStyle="#b73f3d";ctx.fillRect(h.x,y+h.h,h.w,6);
-    }else if(h.type==="pipe"){
-      const y=h.y-G.cam;
-      // Chunky RED PIPE: shaft, thick collar, top lip, inner opening and highlights.
-      ctx.fillStyle="#8e2f32";ctx.fillRect(h.x,y,h.w,h.h);
-      ctx.fillStyle="#d94a4b";ctx.fillRect(h.x+5,y,h.w-10,h.h);
-      ctx.fillStyle="#f47b68";ctx.fillRect(h.x+7,y+2,5,h.h-4);
-      ctx.fillStyle="#b73539";ctx.fillRect(h.x-9,y-11,h.w+18,17);
-      ctx.fillStyle="#ef5b55";ctx.fillRect(h.x-9,y-11,h.w+18,6);
-      ctx.fillStyle="#76272d";ctx.fillRect(h.x-6,y-3,h.w+12,7);
-      ctx.fillStyle="#421e28";ctx.beginPath();ctx.ellipse(h.x+h.w/2,y-1,(h.w+4)/2,5,0,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle="#ff9a82";ctx.lineWidth=2;ctx.strokeRect(h.x-9,y-11,h.w+18,17);
-      ctx.fillStyle="#e85a55";ctx.fillRect(h.x+h.w-7,y+18,4,Math.max(10,h.h-25));
-    }else{
-      const y=h.y-G.cam+Math.sin(G.t*2+h.phase)*24;ctx.save();ctx.translate(h.x,y);ctx.rotate(G.t*5);ctx.fillStyle="#dce8e8";ctx.strokeStyle="#52717a";ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<16;i++){const a=i*Math.PI/8,r=i%2?h.r:h.r*.42;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+    if(h.type==="blade"){
+      const sx=h.x+Math.sin(G.t*2.1+h.phase)*38,sy=h.y-G.cam+Math.cos(G.t*1.7+h.phase)*18;
+      ctx.save();ctx.translate(sx,sy);ctx.rotate(G.t*5);
+      ctx.fillStyle="#e6eef0";ctx.strokeStyle="#47646d";ctx.lineWidth=2;ctx.beginPath();
+      for(let i=0;i<20;i++){const a=i*Math.PI/10,r=i%2?h.r:h.r*.40;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}
+      ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillStyle="#d95750";ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();ctx.restore();
+    }else if(h.section===G.section){
+      if(h.type==="beam"){
+        const y=h.y-G.cam;ctx.fillStyle="#9f3439";ctx.fillRect(h.x,y,h.w,h.h+7);
+        ctx.fillStyle="#ef5a55";ctx.fillRect(h.x,y,h.w,4);
+        ctx.fillStyle="#ff9b83";ctx.fillRect(h.x+8,y+4,Math.min(32,h.w-16),2);
+        ctx.fillStyle="#6c2932";ctx.fillRect(h.x,y+h.h,h.w,6);
+      }else{
+        const top=h.dir===0?h.y-G.cam-h.h:h.y-G.cam;
+        ctx.fillStyle="#8d3035";ctx.fillRect(h.x,top,h.w,h.h);
+        ctx.fillStyle="#d84749";ctx.fillRect(h.x+5,top,h.w-10,h.h);
+        ctx.fillStyle="#f47c69";ctx.fillRect(h.x+8,top+3,5,h.h-6);
+        const capY=h.dir===0?top:top+h.h-13;
+        ctx.fillStyle="#b53439";ctx.fillRect(h.x-10,capY,h.w+20,18);
+        ctx.fillStyle="#f05b55";ctx.fillRect(h.x-10,capY,h.w+20,6);
+        ctx.fillStyle="#54212a";ctx.beginPath();ctx.ellipse(h.x+h.w/2,capY+(h.dir===0?1:17),(h.w+5)/2,6,0,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle="#ff9a82";ctx.lineWidth=2;ctx.strokeRect(h.x-10,capY,h.w+20,18);
+      }
     }
   }
-  // Checkpoints
-  for(const c of checkpoints){const y=c.y-G.cam;ctx.fillStyle=c.section<=G.checkpoint?"#59d27a":"#a8b8b4";ctx.fillRect(c.x,y,c.w,12);ctx.fillStyle="#e9f5e9";ctx.font="bold 10px Arial";ctx.fillText("CP",c.x+16,y-4)}
-  // Floating refill boxes
-  for(const b of boxes)if(!b.used){const y=b.y-G.cam+Math.sin(G.t*2+b.phase)*7;ctx.fillStyle="#d9a83e";ctx.fillRect(b.x,y,b.w,b.h);ctx.strokeStyle="#71572a";ctx.lineWidth=3;ctx.strokeRect(b.x,y,b.w,b.h);ctx.fillStyle="#fff2b1";ctx.font="bold 18px Arial";ctx.fillText("↑",b.x+8,y+20)}
-  // Final red button + pineapple
-  const nearTop=player.y<G.sectionH*1.05;
-  if(nearTop && G.checkpoint<=3){
-    const by=button.y-G.cam;ctx.fillStyle="#b63d39";ctx.fillRect(button.x-8,by+button.h,button.w+16,8);ctx.fillStyle=button.hit?"#75e26f":"#ef5d52";ctx.fillRect(button.x,by,button.w,button.h);ctx.strokeStyle="#7d302f";ctx.lineWidth=3;ctx.strokeRect(button.x,by,button.w,button.h);
+
+  for(const c of checkpoints){
+    const y=c.y-G.cam;
+    if(c.section!==G.section)continue;
+    ctx.fillStyle=c.active||c.section>=G.checkpoint?"#63df7c":"#b7c4c0";
+    ctx.fillRect(c.x,y,c.w,c.h);
+    ctx.fillStyle="#eaffea";ctx.font="900 9px Arial";ctx.fillText("SAVE",c.x+11,y-5);
+    ctx.fillStyle="#7cff91";ctx.fillRect(c.x+5,y+3,5,7);
   }
-  if(nearTop&&!pineapple.collected){const py=pineapple.y-G.cam;ctx.save();ctx.translate(pineapple.x,py);ctx.fillStyle="#e7b938";ctx.beginPath();ctx.ellipse(0,8,13,18,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#59a64f";ctx.beginPath();ctx.moveTo(-10,-8);ctx.lineTo(-5,-24);ctx.lineTo(0,-10);ctx.lineTo(6,-24);ctx.lineTo(10,-8);ctx.fill();ctx.restore()}
-  // Flappy: green Tiny Square with three white feathers above it.
+
+  // Final goal
+  if(G.section===0){
+    const by=button.y-G.cam;
+    ctx.fillStyle="#702b31";ctx.fillRect(button.x-8,by+button.h,button.w+16,8);
+    ctx.fillStyle=button.hit?"#71e77a":"#ef5d52";ctx.fillRect(button.x,by,button.w,button.h);
+    ctx.strokeStyle="#7d302f";ctx.lineWidth=3;ctx.strokeRect(button.x,by,button.w,button.h);
+    ctx.fillStyle="#fff";ctx.font="900 10px Arial";ctx.fillText("GO",button.x+25,by+18);
+    if(!pineapple.collected){
+      const py=pineapple.y-G.cam;ctx.save();ctx.translate(pineapple.x,py);
+      ctx.fillStyle="#e7b938";ctx.beginPath();ctx.ellipse(0,9,14,19,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#62a952";ctx.beginPath();ctx.moveTo(-11,-7);ctx.lineTo(-5,-24);ctx.lineTo(0,-10);ctx.lineTo(7,-25);ctx.lineTo(11,-7);ctx.fill();
+      ctx.strokeStyle="#8a6c2e";ctx.lineWidth=2;ctx.stroke();ctx.restore();
+      ctx.fillStyle="#ffffffcc";ctx.font="900 10px Arial";ctx.fillText("RESCUE PINEAPPLE",pineapple.x-55,py+36);
+    }
+  }
+
+  // Player
   const px=player.x+12,py=player.y-G.cam+12;
   ctx.save();ctx.translate(px,py);
+  ctx.scale(player.face,1);
   const flap=Math.sin(G.t*18)*2;
-  ctx.fillStyle="#63d4a1";ctx.fillRect(-10,-10,20,20);
-  ctx.strokeStyle="#2e765a";ctx.lineWidth=3;ctx.strokeRect(-10,-10,20,20);
-  ctx.fillStyle="#7ce1b4";ctx.fillRect(-7,-7,14,5);
-  ctx.fillStyle="#f7f7e9";
-  ctx.save();ctx.rotate(-.12+flap*.015);ctx.fillRect(-7,-19,5,9);ctx.restore();
-  ctx.save();ctx.rotate(.02-flap*.01);ctx.fillRect(-1,-22,5,12);ctx.restore();
-  ctx.save();ctx.rotate(.12-flap*.015);ctx.fillRect(5,-19,5,9);ctx.restore();
-  if(player.flapFx>0){ctx.strokeStyle="#d8fff0";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-16,7);ctx.lineTo(-23,10);ctx.moveTo(16,7);ctx.lineTo(23,10);ctx.stroke();}
-    ctx.restore();
+  ctx.fillStyle="#59d39b";ctx.fillRect(-11,-11,22,22);
+  ctx.strokeStyle="#23654f";ctx.lineWidth=3;ctx.strokeRect(-11,-11,22,22);
+  ctx.fillStyle="#82e7b8";ctx.fillRect(-7,-7,14,5);
+  ctx.fillStyle="#f8f8ea";
+  ctx.save();ctx.rotate(-.14+flap*.02);ctx.fillRect(-7,-20,5,10);ctx.restore();
+  ctx.save();ctx.rotate(.02-flap*.012);ctx.fillRect(-1,-23,5,13);ctx.restore();
+  ctx.save();ctx.rotate(.14-flap*.02);ctx.fillRect(5,-20,5,10);ctx.restore();
+  if(player.flapFx>0){
+    ctx.strokeStyle="#d9fff0";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-17,8);ctx.lineTo(-25,11);ctx.moveTo(17,8);ctx.lineTo(25,11);ctx.stroke();
+  }
+  ctx.restore();
+
+  for(const p of particles){
+    ctx.globalAlpha=Math.max(0,p.life/40);ctx.fillStyle="#f6df72";ctx.fillRect(p.x-G.cam*.0,p.y-G.cam,p.r,p.r);
+  }
+  ctx.globalAlpha=1;
+  ctx.restore();
+
+  if(G.paused&&G.playing){
+    ctx.fillStyle="#001020aa";ctx.fillRect(0,0,W,H);
+    ctx.fillStyle="#fff";ctx.font="900 36px Arial";ctx.textAlign="center";ctx.fillText("PAUSED",W/2,H/2);
+    ctx.font="700 13px Arial";ctx.fillText("PRESS P OR ESC TO CONTINUE",W/2,H/2+28);ctx.textAlign="left";
+  }
+  if(G.flash>0){ctx.fillStyle="#ffffff";ctx.globalAlpha=G.flash/40;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;G.flash--}
 }
 function loop(){update();draw();requestAnimationFrame(loop)}
 resize();buildWorld();requestAnimationFrame(loop);
