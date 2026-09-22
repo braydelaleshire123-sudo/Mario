@@ -6,13 +6,13 @@
 <title>Pixel Quest — Adventure</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07111d;font-family:'Courier New',monospace}canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
-#hud{position:fixed;top:14px;left:14px;display:flex;gap:10px;flex-wrap:wrap;color:#fff;font-weight:800;font-size:18px;text-shadow:0 2px 4px #000;z-index:5}
-.pill{padding:7px 10px;border:3px solid #fff;border-radius:0;background:#000b;box-shadow:4px 4px 0 #000}
-#help{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);padding:6px 10px;color:#fff;background:#000c;border:2px solid #fff;border-radius:0;font-size:12px;text-shadow:2px 2px 0 #000;z-index:5;white-space:nowrap}
-#screen{position:fixed;inset:0;display:none;place-items:center;background:#0009;z-index:10}
-.card{padding:30px 36px;text-align:center;color:#fff;background:#101a2bf2;border:1px solid #ffffff2b;border-radius:20px;box-shadow:0 20px 60px #0008}
-.card h1{margin:0 0 10px;font-size:46px}.card p{margin:0 0 20px;color:#c9d7e8}
-button{border:0;border-radius:12px;padding:12px 22px;font-weight:800;font-size:17px;cursor:pointer;background:#ffd34d;color:#231900}
+#hud{position:fixed;top:14px;left:14px;display:flex;gap:10px;flex-wrap:wrap;color:#fff;font-weight:800;font-size:18px;text-shadow:3px 3px 0 #000;z-index:5}
+.pill{padding:7px 10px;border:3px solid #fff;border-radius:0;background:#000;box-shadow:4px 4px 0 #000}
+#help{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);padding:6px 10px;color:#fff;background:#000;border:2px solid #fff;border-radius:0;font-size:12px;text-shadow:2px 2px 0 #000;z-index:5;white-space:nowrap}
+#screen{position:fixed;inset:0;display:none;place-items:center;background:#000;z-index:10}
+.card{padding:28px 34px;text-align:center;color:#fff;background:#000;border:6px solid #fff;box-shadow:8px 8px 0 #111}
+.card h1{margin:0 0 10px;font-size:38px;font-family:'Courier New',monospace;text-transform:uppercase}.card p{margin:0 0 20px;color:#fff}
+button{border:4px solid #fff;border-radius:0;padding:10px 20px;font-family:'Courier New',monospace;font-weight:900;font-size:17px;cursor:pointer;background:#ffcc33;color:#000;box-shadow:5px 5px 0 #111}
 </style>
 </head>
 <body>
@@ -231,7 +231,7 @@ function update(dt){
  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=12*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1)}
  document.getElementById('levelNum').textContent=level;document.getElementById('coins').textContent=coinsGot;document.getElementById('lives').textContent=lives;document.getElementById('score').textContent=score;
 }
-function cloud(x,y,s){ctx.fillStyle='#ffffffb8';ctx.beginPath();ctx.arc(x,y,24*s,0,7);ctx.arc(x+30*s,y-12*s,31*s,0,7);ctx.arc(x+65*s,y,22*s,0,7);ctx.fill()}
+function cloud(x,y,s){ctx.fillStyle='#ffffffb8';ctx.fillRect(x-20*s,y-12*s,105*s,24*s);ctx.fillRect(x+5*s,y-25*s,45*s,13*s)}
 function drawBG(){
  const sky=['#5c94fc','#1d2b53','#4b692f','#f4a43b','#7b8fa1','#1b3b6f','#5b3b88','#4f772d','#31506b'][(level-1)%9];
  const ground=['#87ceeb','#243b6b','#8fbd5a','#ffd27a','#b9c7d1','#4c86a8','#b184c4','#a8c96b','#8ca8b8'][(level-1)%9];
@@ -259,25 +259,8 @@ function block(b){
  const x=b.x-cam;ctx.fillStyle=b.used?'#8a632f':'#d98d2b';ctx.fillRect(x,b.y,b.w,b.h);ctx.strokeStyle='#7b4b1a';ctx.lineWidth=3;ctx.strokeRect(x+1,b.y+1,b.w-2,b.h-2);
  ctx.fillStyle=b.used?'#b08a55':'#ffd77a';ctx.fillRect(x+7,b.y+7,b.w-14,5);ctx.font='bold 27px Arial';ctx.textAlign='center';ctx.fillStyle=b.used?'#d8c7ad':'#fff2a9';ctx.fillText(b.used?'!':'?',x+b.w/2,b.y+37);
 }
-function powerup(p){const x=p.x-cam,y=p.y;ctx.save();ctx.translate(x+p.w/2,y+p.h/2);ctx.rotate(performance.now()/500);ctx.fillStyle={speed:'#ff9f43',shield:'#65e6ff',jump:'#9b7bff',coin:'#ffd43b',star:'#ff5c8a'}[p.type]||'#fff';ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5,r=i%2?8:14;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.fillText({speed:'S',shield:'O',jump:'J',coin:'C',star:'★'}[p.type]||'?',0,4);ctx.restore()}
-function coin(o){const x=o.x-cam,y=o.y+Math.sin(o.t)*4;ctx.save();ctx.translate(x,y);ctx.scale(.45+.55*Math.abs(Math.cos(o.t*.55)),1);ctx.fillStyle='#ffd43b';ctx.fillRect(-10,-14,20,28);ctx.fillRect(-14,-8,28,16);ctx.strokeStyle='#b9790b';ctx.lineWidth=2;ctx.stroke();ctx.restore()}
-function enemy(e){const x=e.x-cam;ctx.fillStyle='#6938a8';ctx.fillRect(x,e.y,e.w,e.h);ctx.fillStyle='#fff';ctx.fillRect(x+8,e.y+9,9,10);ctx.fillRect(x+24,e.y+9,9,10);ctx.fillStyle='#111';ctx.fillRect(x+11,e.y+12,4,5);ctx.fillRect(x+27,e.y+12,4,5);ctx.fillStyle='#3a225f';ctx.fillRect(x-3,e.y+e.h-6,16,8);ctx.fillRect(x+27,e.y+e.h-6,16,8)}
-function playerDraw(){
- const x=player.x-cam,y=player.y;if(player.inv>0&&Math.floor(player.inv*12)%2===0)return;if(player.power>0){ctx.save();ctx.shadowColor='#6ff';ctx.shadowBlur=22;}
- ctx.save();ctx.translate(Math.floor(x+player.w/2),Math.floor(y+player.h/2));ctx.scale(player.face,1);
- const bob=player.ground?Math.round(Math.sin(player.run)):0;ctx.translate(0,bob);
- ctx.fillStyle='#26344d';ctx.fillRect(-15,5,30,30);ctx.fillStyle='#35a8ff';ctx.fillRect(-15,2,30,25);
- ctx.fillStyle='#ffd0a3';ctx.fillRect(-12,-23,24,25);ctx.fillStyle='#4b2f20';ctx.fillRect(-16,-27,32,8);ctx.fillRect(-18,-22,8,9);ctx.fillRect(10,-22,8,5);
- ctx.fillStyle='#182030';ctx.fillRect(-11,27,10,7);ctx.fillRect(2,27,11,7);
- ctx.fillStyle='#111';ctx.fillRect(5,-16,4,5);ctx.fillStyle='#fff';ctx.fillRect(-8,7,16,4);
- ctx.restore();if(player.power>0)ctx.restore();
-}
-function drawGoal(){const x=activeGoal.x-cam;ctx.fillStyle='#fff';ctx.font='bold 18px Arial';ctx.textAlign='left';ctx.fillText('LEVEL '+level+' FINISH',x-28,activeGoal.y-18);ctx.fillStyle='#eee';ctx.fillRect(x,activeGoal.y,9,105);ctx.fillStyle='#ef476f';ctx.beginPath();ctx.moveTo(x+7,activeGoal.y);ctx.lineTo(x+58,activeGoal.y+18);ctx.lineTo(x+7,activeGoal.y+37);ctx.fill();ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x+3.5,activeGoal.y,8,0,7);ctx.fill()}
-function render(){
- drawBG();const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;ctx.save();ctx.translate(sx,sy);
- for(const p of activePlatforms)platform(p);for(const b of activeBlocks)block(b);for(const o of coins)if(!o.got&&o.x-cam>-30&&o.x-cam<W+30)coin(o);for(const e of activeEnemies)if(e.alive)enemy(e);for(const p of powerups)powerup(p);drawGoal();playerDraw();
- for(const p of particles){ctx.globalAlpha=Math.max(0,p.life*1.5);ctx.fillStyle=p.color;ctx.fillRect(p.x-cam,p.y,p.s,p.s)}ctx.globalAlpha=1;ctx.restore();
-}
+function powerup(p){const x=Math.floor(p.x-cam),y=Math.floor(p.y);ctx.fillStyle={speed:'#ff8c00',shield:'#55ddff',jump:'#9966ff',coin:'#ffcc00',star:'#ff6699'}[p.type]||'#fff';ctx.fillRect(x,y,p.w,p.h);ctx.fillStyle='#000';ctx.fillRect(x+4,y+4,p.w-8,p.h-8);ctx.fillStyle='#fff';ctx.font='bold 16px Courier New';ctx.textAlign='center';ctx.fillText({speed:'S',shield:'O',jump:'J',coin:'C',star:'*'}[p.type]||'?',x+p.w/2,y+20);}
+function drawGoal(){const x=Math.floor(activeGoal.x-cam);ctx.fillStyle='#fff';ctx.font='bold 16px Courier New';ctx.textAlign='left';ctx.fillText('FINISH',x-8,activeGoal.y-16);ctx.fillStyle='#eeeeee';ctx.fillRect(x,activeGoal.y,8,105);ctx.fillStyle='#ff3355';ctx.fillRect(x+8,activeGoal.y,48,8);ctx.fillRect(x+8,activeGoal.y+8,40,8);ctx.fillRect(x+8,activeGoal.y+16,32,8);ctx.fillStyle='#ffcc00';ctx.fillRect(x-4,activeGoal.y-4,8,8);}
 function loop(t){const dt=(t-last)/1000;last=t;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 </script>
 </body>
