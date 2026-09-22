@@ -15,7 +15,9 @@ canvas{display:block;width:100%;height:100%}
 #help{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:#10283dcc;padding:7px 12px;border:1px solid #ffffff28;border-radius:8px;font-size:11px;white-space:nowrap}
 #toast{position:absolute;top:82px;left:50%;transform:translateX(-50%) translateY(-12px);opacity:0;background:#122c42ee;padding:8px 15px;border:2px solid #ffffff30;border-radius:999px;font-size:11px;font-weight:900;transition:.2s;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#screen{position:fixed;inset:0;display:grid;place-items:center;background:#03111dcc;z-index:6}
+#screen{position:fixed;inset:0;display:grid;place-items:center;background:#03111dcc;z-index:100;pointer-events:auto}
+#screen .card{position:relative;z-index:101}
+#go{position:relative;z-index:102 !important;pointer-events:auto !important;user-select:none;-webkit-user-select:none}
 .card{width:min(650px,92vw);padding:34px;text-align:center;background:linear-gradient(145deg,#eef8f5,#c7e4e1);border:3px solid #173f4c;border-radius:18px;box-shadow:0 22px 80px #0009}
 .eyebrow{font-size:11px;font-weight:900;letter-spacing:3px;color:#43717b;margin-bottom:8px}
 h1{margin:0 0 10px;color:#173f4c;font-size:clamp(34px,7vw,62px);letter-spacing:2px;line-height:.95}
@@ -46,7 +48,7 @@ button{padding:13px 30px;border:3px solid #173f4c;border-radius:9px;background:#
     <div class="eyebrow">ORIGINAL PRECISION PLATFORMER</div>
     <h1 id="st">FLAPPY TOWER</h1>
     <p id="msg">Climb 18 hand-designed rooms. Learn the jump routes, use your three air jumps, wall-kick off the tower, dodge red pipes and moving hazards, then reach the button and rescue Pineapple.</p>
-    <button id="go" type="button">START CLIMB</button>
+    <button id="go" type="button" onclick="window.startClimbNow && window.startClimbNow(event)">START CLIMB</button>
     <div id="tips">Designed around short challenge rooms, clear routes, fast respawns, and a difficulty curve.</div>
   </div>
 </div>
@@ -220,7 +222,8 @@ addEventListener("keydown",keyDown);
 addEventListener("keyup",e=>G.keys[e.key.toLowerCase()]=false);
 canvas.addEventListener("pointerdown",jump);
 const startButton=document.getElementById("go");
-function startGame(e){if(e){e.preventDefault();e.stopPropagation()}restart()}
+function startGame(e){if(e){e.preventDefault();e.stopPropagation()}try{restart()}catch(err){console.error("START CLIMB failed:",err)}}
+window.startClimbNow=startGame;
 startButton.addEventListener("click",startGame);
 startButton.addEventListener("pointerdown",startGame,{passive:false});
 startButton.addEventListener("touchstart",startGame,{passive:false});
