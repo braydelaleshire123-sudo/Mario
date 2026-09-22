@@ -168,7 +168,7 @@ function update(){
 function pineappleBox(){return{x:pineapple.x-20,y:pineapple.y-25,w:40,h:55}}
 
 function draw(){
-  const L=Math.max(18,W*.025),R=Math.min(W-18,W*.975);
+  const L=Math.max(18,W*.025),R=Math.min(W-18,W*.975),tw=R-L;
   const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#74d4e3");bg.addColorStop(.55,"#4aaec2");bg.addColorStop(1,"#318fa8");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
   // Wide, bright tower chamber with subtle depth.
   const chamber=ctx.createLinearGradient(L,0,R,0);chamber.addColorStop(0,"#52b9c9");chamber.addColorStop(.5,"#67c5d1");chamber.addColorStop(1,"#4daabd");ctx.fillStyle=chamber;ctx.fillRect(L,0,R-L,H);
@@ -182,24 +182,34 @@ function draw(){
   for(let y=-(G.cam%30);y<H+30;y+=30){ctx.fillStyle="#8ab56b";ctx.fillRect(L-15,y,10,11);ctx.fillRect(R+5,y,10,11)}
   // small bolts on the tower walls
   ctx.fillStyle="#f7df83";for(let y=18;y<H;y+=52){ctx.beginPath();ctx.arc(L-9,y,2,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(R+9,y+20,2,0,Math.PI*2);ctx.fill()}
+  // Dark-blue industrial blocks, matching the chunky maze-like reference style.
+  const blockY=((G.totalH-G.cam)%G.sectionH)-G.sectionH;
+  for(let yy=blockY;yy<H+G.sectionH;yy+=G.sectionH){
+    ctx.fillStyle="#315b7c";
+    ctx.fillRect(L+tw*.08,yy+90,tw*.22,28);
+    ctx.fillRect(L+tw*.55,yy+250,tw*.28,28);
+    ctx.fillStyle="#214b6d";
+    ctx.fillRect(L+tw*.08,yy+90,tw*.22,6);
+    ctx.fillRect(L+tw*.55,yy+250,tw*.28,6);
+  }
   // screen boundary
   const section=Math.floor((G.totalH-player.y)/G.sectionH);
   ctx.fillStyle="#ffffff18";ctx.fillRect(L+1,H*.02,R-L-2,3);
 
   for(const p of platforms){
     const y=p.y-G.cam;if(y<-35||y>H+35)continue;
-    ctx.fillStyle="#b8913e";ctx.fillRect(p.x,y+5,p.w,p.h-1);
-    ctx.fillStyle="#e8ca61";ctx.fillRect(p.x,y,p.w,p.h-5);
-    ctx.fillStyle="#ffe58a";ctx.fillRect(p.x+4,y+3,p.w-8,4);
-    ctx.strokeStyle="#597c50";ctx.lineWidth=3;ctx.strokeRect(p.x,y,p.w,p.h);
+    ctx.fillStyle="#4f754d";ctx.fillRect(p.x-3,y-2,p.w+6,p.h+5);
+    ctx.fillStyle="#d9b94f";ctx.fillRect(p.x,y,p.w,p.h);
+    ctx.fillStyle="#f1d36a";ctx.fillRect(p.x+3,y+3,p.w-6,5);
+    ctx.strokeStyle="#47744d";ctx.lineWidth=3;ctx.strokeRect(p.x,y,p.w,p.h);
   }
   for(const h of hazards){
     if(h.type==="beam"){
-      const y=h.y-G.cam;ctx.fillStyle="#e85b50";ctx.fillRect(h.x,y,h.w,h.h);
-      ctx.fillStyle="#ff8b79";ctx.fillRect(h.x,y,h.w,3);
-      ctx.fillStyle="#c74742";ctx.fillRect(h.x,y+h.h,h.w,5);
+      const y=h.y-G.cam;ctx.fillStyle="#e4544d";ctx.fillRect(h.x,y,h.w,h.h);
+      ctx.fillStyle="#ff8072";ctx.fillRect(h.x,y,h.w,4);
+      ctx.fillStyle="#b73f3d";ctx.fillRect(h.x,y+h.h,h.w,6);
     }else if(h.type==="pipe"){
-      const y=h.y-G.cam;ctx.fillStyle="#e65a50";ctx.fillRect(h.x,y,h.w,h.h);ctx.fillStyle="#ff8170";ctx.fillRect(h.x-6,y-8,h.w+12,14);ctx.fillStyle="#bd4540";ctx.fillRect(h.x-6,y+h.h-4,h.w+12,12);
+      const y=h.y-G.cam;ctx.fillStyle="#e4544d";ctx.fillRect(h.x,y,h.w,h.h);ctx.fillStyle="#ff8a78";ctx.fillRect(h.x-7,y-10,h.w+14,16);ctx.fillStyle="#b73f3d";ctx.fillRect(h.x-7,y+h.h-5,h.w+14,14);
     }else{
       const y=h.y-G.cam+Math.sin(G.t*2+h.phase)*24;ctx.save();ctx.translate(h.x,y);ctx.rotate(G.t*5);ctx.fillStyle="#dce8e8";ctx.strokeStyle="#52717a";ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<16;i++){const a=i*Math.PI/8,r=i%2?h.r:h.r*.42;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
     }
@@ -211,26 +221,19 @@ function draw(){
   // Final red button + pineapple
   const by=button.y-G.cam;ctx.fillStyle="#b63d39";ctx.fillRect(button.x-8,by+button.h,button.w+16,8);ctx.fillStyle=button.hit?"#75e26f":"#ef5d52";ctx.fillRect(button.x,by,button.w,button.h);ctx.strokeStyle="#7d302f";ctx.lineWidth=3;ctx.strokeRect(button.x,by,button.w,button.h);
   if(!pineapple.collected){const py=pineapple.y-G.cam;ctx.save();ctx.translate(pineapple.x,py);ctx.fillStyle="#e7b938";ctx.beginPath();ctx.ellipse(0,8,13,18,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#59a64f";ctx.beginPath();ctx.moveTo(-10,-8);ctx.lineTo(-5,-24);ctx.lineTo(0,-10);ctx.lineTo(6,-24);ctx.lineTo(10,-8);ctx.fill();ctx.restore()}
-  // Polished Flappy character: readable at a glance, with animated wings and a soft shadow.
+  // Flappy: green Tiny Square with three white feathers above it.
   const px=player.x+12,py=player.y-G.cam+12;
   ctx.save();ctx.translate(px,py);
-  const bob=Math.sin(G.t*9)*1.5, wing=Math.sin(G.t*18)*5;
-  ctx.fillStyle="#00000022";ctx.beginPath();ctx.ellipse(0,16,15,4,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle="#fff8d9";
-  ctx.beginPath();ctx.ellipse(-15,wing*.25,9,5,-.25,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.ellipse(15,-wing*.25,9,5,.25,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle="#f2c94c";ctx.fillRect(-12,-12+bob,24,24);
-  ctx.fillStyle="#ffdF69";ctx.fillRect(-9,-9+bob,18,6);
-  ctx.strokeStyle="#795f2c";ctx.lineWidth=3;ctx.strokeRect(-12,-12+bob,24,24);
-  // face
-  ctx.fillStyle="#4c5a42";ctx.fillRect(-7,-1+bob,4,5);ctx.fillRect(3,-1+bob,4,5);
-  ctx.fillStyle="#fff4b0";ctx.fillRect(-5,8+bob,10,3);
-  if(player.flapFx>0){
-    ctx.strokeStyle="#b8f0d0";ctx.lineWidth=2;ctx.globalAlpha=.8;
-    ctx.beginPath();ctx.moveTo(-22,8);ctx.lineTo(-29,12);ctx.moveTo(22,8);ctx.lineTo(29,12);ctx.stroke();
-    ctx.globalAlpha=1;
-  }
-  ctx.restore();
+  const flap=Math.sin(G.t*18)*2;
+  ctx.fillStyle="#63d4a1";ctx.fillRect(-10,-10,20,20);
+  ctx.strokeStyle="#2e765a";ctx.lineWidth=3;ctx.strokeRect(-10,-10,20,20);
+  ctx.fillStyle="#7ce1b4";ctx.fillRect(-7,-7,14,5);
+  ctx.fillStyle="#f7f7e9";
+  ctx.save();ctx.rotate(-.12+flap*.015);ctx.fillRect(-7,-19,5,9);ctx.restore();
+  ctx.save();ctx.rotate(.02-flap*.01);ctx.fillRect(-1,-22,5,12);ctx.restore();
+  ctx.save();ctx.rotate(.12-flap*.015);ctx.fillRect(5,-19,5,9);ctx.restore();
+  if(player.flapFx>0){ctx.strokeStyle="#d8fff0";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-16,7);ctx.lineTo(-23,10);ctx.moveTo(16,7);ctx.lineTo(23,10);ctx.stroke();}
+    ctx.restore();
 }
 function loop(){update();draw();requestAnimationFrame(loop)}
 resize();buildWorld();requestAnimationFrame(loop);
