@@ -78,6 +78,8 @@ camera.fov=.96;
 camera.inertia=.25;
 camera.applyGravity=true;
 camera.checkCollisions=true;
+// Use our own keyboard movement so WASD works reliably even when browser focus is finicky.
+if(camera.inputs.attached.keyboard) camera.inputs.attached.keyboard.detachControl();
 camera.ellipsoid=new BABYLON.Vector3(.45,.85,.45);
 scene.gravity=new BABYLON.Vector3(0,-.25,0);
 scene.collisionsEnabled=true;
@@ -131,6 +133,8 @@ let toastTimer=0,objective="Restore 3 electrical zones";
 const keys={};
 addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==="e")interact();if(e.key.toLowerCase()==="f")toggleFlash();});
 addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+canvas.tabIndex=0;
+canvas.addEventListener("pointerdown",()=>canvas.focus());
 
 function box(name,pos,size,material,collide=true){
   const b=BABYLON.MeshBuilder.CreateBox(name,{width:size.x,height:size.y,depth:size.z},scene);
@@ -334,7 +338,7 @@ document.getElementById("start").addEventListener("click",()=>{
   for(const p of panels){p.active=false;p.light.material=mats.redE}
   for(const t of terminals){t.used=false;t.screen.material=mats.cyan}
   accessCard.setEnabled(true);controlDoor.isVisible=true;controlDoor.checkCollisions=true;setObjective("Restore 3 electrical zones");
-  canvas.requestPointerLock?.();showMessage("SHIFT STARTED — POWER IS DOWN");
+  canvas.focus();canvas.requestPointerLock?.();showMessage("SHIFT STARTED — POWER IS DOWN");
 });
 
 scene.onBeforeRenderObservable.add(()=>{
@@ -343,6 +347,23 @@ scene.onBeforeRenderObservable.add(()=>{
   elapsed+=dt;
   const moving=keys.w||keys.s||keys.a||keys.d;
   const sprint=keys.shift&&moving&&stamina>1;
+  // Reliable first-person movement driven directly from held keys.
+  if(moving){
+    const forward=camera.getDirection(BABYLON.Axis.Z); forward.y=0;
+    const right=camera.getDirection(BABYLON.Axis.X); right.y=0;
+    if(forward.lengthSquared()>0) forward.normalize();
+    if(right.lengthSquared()>0) right.normalize();
+    const move=BABYLON.Vector3.Zero();
+    if(keys.w) move.addInPlace(forward);
+    if(keys.s) move.subtractInPlace(forward);
+    if(keys.d) move.addInPlace(right);
+    if(keys.a) move.subtractInPlace(right);
+    if(move.lengthSquared()>0){
+      move.normalize().scaleInPlace((sprint?.19:.11)*dt*60);
+      camera.position.addInPlace(move);
+      camera.position.y=1.7;
+    }
+  }
   if(sprint){camera.speed=.19;stamina=Math.max(0,stamina-dt*24)}else{camera.speed=.11;stamina=Math.min(100,stamina+dt*15)}
   camera.speed*=engine.getFps()<45?.72:1;
   flash.position.set(0,.05,.05);
