@@ -12,7 +12,7 @@ canvas{display:block;width:100%;height:100%}
 #stats{position:absolute;top:12px;right:14px;text-align:right;font-size:13px;line-height:1.5}
 #help{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:#173f4acc;padding:7px 11px;border-radius:7px;font-size:12px;white-space:nowrap}
 #screen{position:fixed;inset:0;display:grid;place-items:center;background:#0008;z-index:5}
-.card{width:min(600px,92vw);padding:34px;text-align:center;background:#d9e9e9;border:4px solid #173f4c;border-radius:12px;box-shadow:0 18px 60px #0008}
+.card{width:min(600px,92vw);padding:34px;text-align:center;background:linear-gradient(#eef7f4,#cfe5e3);border:4px solid #173f4c;border-radius:16px;box-shadow:0 18px 60px #0008}
 h1{margin:0 0 10px;color:#173f4c;font-size:clamp(34px,7vw,60px);letter-spacing:2px}
 p{color:#315663;line-height:1.5}
 button{padding:13px 30px;border:3px solid #173f4c;border-radius:8px;background:#ef5d52;color:#fff;font-weight:900;font-size:16px;cursor:pointer}
@@ -28,7 +28,7 @@ button{padding:13px 30px;border:3px solid #173f4c;border-radius:8px;background:#
 <div id="screen">
   <div class="card">
     <h1 id="st">BIG FLAPPY TOWER</h1>
-    <p id="msg">A giant precision tower. Three air-jumps, tight platforms, red barriers, pipes, moving hazards and checkpoints. Reach the red button and rescue Pineapple.</p>
+    <p id="msg">Climb the giant tower, chain your air jumps, dodge the red hazards and reach the top. Hit the button and rescue Pineapple!</p>
     <button id="go">START GAME</button>
   </div>
 </div>
@@ -169,25 +169,29 @@ function pineappleBox(){return{x:pineapple.x-20,y:pineapple.y-25,w:40,h:55}}
 
 function draw(){
   const L=Math.max(18,W*.025),R=Math.min(W-18,W*.975);
-  ctx.fillStyle="#2c91ad";ctx.fillRect(0,0,W,H);
-  // Large clean tower chamber.
-  ctx.fillStyle="#3da0b8";ctx.fillRect(L,0,R-L,H);
-  // faint panel lines
-  ctx.strokeStyle="#318aa3";ctx.lineWidth=2;
-  for(let x=L+40;x<R;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
-  // tower side walls
-  ctx.fillStyle="#e5c55e";ctx.fillRect(L-13,0,13,H);ctx.fillRect(R,0,13,H);
-  ctx.fillStyle="#668e58";ctx.fillRect(L-7,0,7,H);ctx.fillRect(R,0,7,H);
-  for(let y=-(G.cam%28);y<H+28;y+=28){ctx.fillStyle="#82a968";ctx.fillRect(L-10,y,10,10);ctx.fillRect(R,y,10,10)}
+  const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,"#74d4e3");bg.addColorStop(.55,"#4aaec2");bg.addColorStop(1,"#318fa8");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  // Wide, bright tower chamber with subtle depth.
+  const chamber=ctx.createLinearGradient(L,0,R,0);chamber.addColorStop(0,"#52b9c9");chamber.addColorStop(.5,"#67c5d1");chamber.addColorStop(1,"#4daabd");ctx.fillStyle=chamber;ctx.fillRect(L,0,R-L,H);
+  ctx.strokeStyle="#ffffff20";ctx.lineWidth=2;
+  for(let x=L+45;x<R;x+=90){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+  // Decorative horizontal screen seams.
+  for(let y=-(G.cam%G.sectionH);y<H+G.sectionH;y+=G.sectionH){ctx.fillStyle="#ffffff28";ctx.fillRect(L,y,R-L,4)}
+  // chunky tower walls
+  ctx.fillStyle="#e6c85d";ctx.fillRect(L-18,0,18,H);ctx.fillRect(R,0,18,H);
+  ctx.fillStyle="#6d985c";ctx.fillRect(L-10,0,10,H);ctx.fillRect(R,0,10,H);
+  for(let y=-(G.cam%30);y<H+30;y+=30){ctx.fillStyle="#8ab56b";ctx.fillRect(L-15,y,10,11);ctx.fillRect(R+5,y,10,11)}
+  // small bolts on the tower walls
+  ctx.fillStyle="#f7df83";for(let y=18;y<H;y+=52){ctx.beginPath();ctx.arc(L-9,y,2,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(R+9,y+20,2,0,Math.PI*2);ctx.fill()}
   // screen boundary
   const section=Math.floor((G.totalH-player.y)/G.sectionH);
   ctx.fillStyle="#ffffff18";ctx.fillRect(L+1,H*.02,R-L-2,3);
 
   for(const p of platforms){
     const y=p.y-G.cam;if(y<-35||y>H+35)continue;
-    ctx.fillStyle="#dfc45d";ctx.fillRect(p.x,y,p.w,p.h);
-    ctx.strokeStyle="#638d55";ctx.lineWidth=5;ctx.strokeRect(p.x,y,p.w,p.h);
-    ctx.fillStyle="#f4d875";ctx.fillRect(p.x+6,y+4,p.w-12,5);
+    ctx.fillStyle="#b8913e";ctx.fillRect(p.x,y+5,p.w,p.h-1);
+    ctx.fillStyle="#e8ca61";ctx.fillRect(p.x,y,p.w,p.h-5);
+    ctx.fillStyle="#ffe58a";ctx.fillRect(p.x+4,y+3,p.w-8,4);
+    ctx.strokeStyle="#597c50";ctx.lineWidth=3;ctx.strokeRect(p.x,y,p.w,p.h);
   }
   for(const h of hazards){
     if(h.type==="beam"){
@@ -207,20 +211,23 @@ function draw(){
   // Final red button + pineapple
   const by=button.y-G.cam;ctx.fillStyle="#b63d39";ctx.fillRect(button.x-8,by+button.h,button.w+16,8);ctx.fillStyle=button.hit?"#75e26f":"#ef5d52";ctx.fillRect(button.x,by,button.w,button.h);ctx.strokeStyle="#7d302f";ctx.lineWidth=3;ctx.strokeRect(button.x,by,button.w,button.h);
   if(!pineapple.collected){const py=pineapple.y-G.cam;ctx.save();ctx.translate(pineapple.x,py);ctx.fillStyle="#e7b938";ctx.beginPath();ctx.ellipse(0,8,13,18,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#59a64f";ctx.beginPath();ctx.moveTo(-10,-8);ctx.lineTo(-5,-24);ctx.lineTo(0,-10);ctx.lineTo(6,-24);ctx.lineTo(10,-8);ctx.fill();ctx.restore()}
-  // Flappy Tiny Square: warm yellow body with the little white wings seen in the real game.
+  // Polished Flappy character: readable at a glance, with animated wings and a soft shadow.
   const px=player.x+12,py=player.y-G.cam+12;
   ctx.save();ctx.translate(px,py);
-  const wingLift=Math.sin(G.t*18)*3;
-  ctx.fillStyle="#f4f7e8";
-  ctx.beginPath();ctx.ellipse(-15,-1+wingLift,8,4,Math.sin(G.t*12)*.18,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.ellipse(15,-1-wingLift,8,4,-Math.sin(G.t*12)*.18,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle="#e7b938";ctx.fillRect(-12,-12,24,24);
-  ctx.strokeStyle="#8b6b2b";ctx.lineWidth=3;ctx.strokeRect(-12,-12,24,24);
-  ctx.fillStyle="#fff0a0";ctx.fillRect(-8,-8,16,5);
-  ctx.fillStyle="#6fb45a";ctx.fillRect(-7,2,5,5);ctx.fillRect(2,2,5,5);
+  const bob=Math.sin(G.t*9)*1.5, wing=Math.sin(G.t*18)*5;
+  ctx.fillStyle="#00000022";ctx.beginPath();ctx.ellipse(0,16,15,4,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#fff8d9";
+  ctx.beginPath();ctx.ellipse(-15,wing*.25,9,5,-.25,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(15,-wing*.25,9,5,.25,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#f2c94c";ctx.fillRect(-12,-12+bob,24,24);
+  ctx.fillStyle="#ffdF69";ctx.fillRect(-9,-9+bob,18,6);
+  ctx.strokeStyle="#795f2c";ctx.lineWidth=3;ctx.strokeRect(-12,-12+bob,24,24);
+  // face
+  ctx.fillStyle="#4c5a42";ctx.fillRect(-7,-1+bob,4,5);ctx.fillRect(3,-1+bob,4,5);
+  ctx.fillStyle="#fff4b0";ctx.fillRect(-5,8+bob,10,3);
   if(player.flapFx>0){
-    ctx.fillStyle="#63d0a0";ctx.globalAlpha=.7;
-    ctx.fillRect(-23,9,4,4);ctx.fillRect(19,10,4,4);ctx.fillRect(-19,14,3,3);ctx.fillRect(16,15,3,3);
+    ctx.strokeStyle="#b8f0d0";ctx.lineWidth=2;ctx.globalAlpha=.8;
+    ctx.beginPath();ctx.moveTo(-22,8);ctx.lineTo(-29,12);ctx.moveTo(22,8);ctx.lineTo(29,12);ctx.stroke();
     ctx.globalAlpha=1;
   }
   ctx.restore();
