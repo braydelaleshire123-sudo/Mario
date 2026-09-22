@@ -23,7 +23,7 @@ canvas{display:block;width:100%;height:100%}
 h1{margin:0 0 10px;color:#173f4c;font-size:clamp(34px,7vw,62px);letter-spacing:2px;line-height:.95}
 p{color:#315663;line-height:1.5;margin:12px auto 20px;max-width:520px}
 #tips{font-size:11px;opacity:.78;margin-top:12px}
-button{padding:13px 30px;border:3px solid #173f4c;border-radius:9px;background:#ef5d52;color:#fff;font-weight:900;font-size:16px;cursor:pointer;pointer-events:auto;position:relative;z-index:20;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button{padding:13px 30px;border:3px solid #173f4c;border-radius:9px;background:#ef5d52;color:#fff;font-weight:900;font-size:16px;cursor:pointer;pointer-events:auto;position:relative;z-index:20;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 7px 0 #8e3934,0 14px 24px #0003;transition:transform .08s,filter .15s,box-shadow .08s}button:hover{filter:brightness(1.08);transform:translateY(-2px)}button:active{transform:translateY(4px);box-shadow:0 3px 0 #8e3934,0 7px 14px #0003}
 #touch{display:none;position:fixed;left:0;right:0;bottom:18px;z-index:4;pointer-events:none;justify-content:space-between;padding:0 18px}
 .touchGroup{display:flex;gap:10px;pointer-events:auto}
 .touchBtn{width:58px;height:50px;border:2px solid #ffffff45;border-radius:12px;background:#10283dcc;color:#fff;font-size:21px;font-weight:900;backdrop-filter:blur(4px)}
@@ -123,7 +123,7 @@ function buildWorld(){
     }
   }
   const start=platforms.find(p=>p.section===17&&p.index===0);
-  player={x:start.x+start.w*.5-12,y:start.y-26,w:24,h:24,vx:0,vy:0,onGround:true,airJumps:3,flapFx:0,face:1,groundFrames:0};
+  player={x:start.x+start.w*.5-12,y:start.y-26,w:24,h:24,vx:0,vy:0,onGround:true,airJumps:3,flapFx:0,face:1,groundFrames:0,squash:0};
   button={x:W/2-34,y:worldY(0,570)-18,w:68,h:28,hit:false};
   pineapple={x:W/2,y:worldY(0,570)-70,collected:false};
   G.checkpoint=17;G.section=17;G.cam=(sectionCount-18)*sectionH;G.paused=false;
@@ -156,16 +156,21 @@ function die(){
 }
 function win(){
   G.playing=false;
+  try{
+    const old=Number(localStorage.getItem("flappyTowerBest")||0);
+    if(!old||G.runTime<old)localStorage.setItem("flappyTowerBest",G.runTime.toFixed(2));
+  }catch(e){}
   document.getElementById("st").textContent="PINEAPPLE RESCUED!";
   document.getElementById("msg").textContent="You cleared all 18 rooms, hit the final button, and made it to the top.";
   document.getElementById("go").textContent="CLIMB AGAIN";
-  document.getElementById("tips").textContent="Run time: "+formatTime(G.runTime)+" • Deaths: "+G.deaths;
+  document.getElementById("tips").textContent="Run time: "+formatTime(G.runTime)+" • Deaths: "+G.deaths+(getBestTime()?" • Best: "+formatTime(getBestTime()):"");
   document.getElementById("screen").style.display="grid";
   burst(pineapple.x,pineapple.y,36);
 }
 function toast(text){
   const el=document.getElementById("toast");el.textContent=text;el.classList.add("show");G.toast=110;
 }
+function getBestTime(){try{const n=Number(localStorage.getItem("flappyTowerBest")||0);return n>0?n:0}catch(e){return 0}}
 function formatTime(sec){
   const m=Math.floor(sec/60),s=Math.floor(sec%60).toString().padStart(2,"0");
   return m+":"+s;
@@ -206,10 +211,10 @@ function jump(){
 }
 function doJump(){
   if(player.onGround||player.groundFrames>0||G.coyote>0){
-    player.vy=-12.7;player.onGround=false;player.airJumps=3;player.flapFx=9;G.coyote=0;G.jumpBuffer=0;burst(player.x+12,player.y+24,5);return;
+    player.vy=-12.7;player.onGround=false;player.airJumps=3;player.flapFx=9;player.squash=-1;G.coyote=0;G.jumpBuffer=0;burst(player.x+12,player.y+24,5);return;
   }
   if(player.airJumps>0){
-    player.vy=-10.9;player.airJumps--;player.flapFx=10;G.jumpBuffer=0;burst(player.x+12,player.y+22,4);
+    player.vy=-10.9;player.airJumps--;player.flapFx=10;player.squash=-1;G.jumpBuffer=0;burst(player.x+12,player.y+22,4);
   }
 }
 function keyDown(e){
@@ -280,12 +285,13 @@ function update(){
   for(const p of platforms){
     if(p.section!==G.section)continue;
     if(player.vy>=0&&player.x+player.w>p.x&&player.x<p.x+p.w&&oldBottom<=p.y+4&&player.y+player.h>=p.y){
-      player.y=p.y-player.h;player.vy=0;player.onGround=true;player.airJumps=3;player.groundFrames=5;break;
+      player.y=p.y-player.h;player.vy=0;player.onGround=true;player.airJumps=3;player.groundFrames=5;player.squash=1;break;
     }
   }
   if(!player.onGround){G.coyote=Math.max(0,(G.coyote||0)-1)}else G.coyote=6;
   if(G.jumpBuffer>0)doJump();
   if(player.flapFx>0)player.flapFx--;
+  player.squash+=(0-player.squash)*.18;
   if(player.groundFrames>0)player.groundFrames--;
   for(const b of boxes){
     if(b.section!==G.section||b.used)continue;
@@ -407,13 +413,13 @@ function draw(){
       ctx.fillStyle="#d95750";ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();ctx.restore();
     }else if(h.section===G.section){
       if(h.type==="beam"){
-        const y=h.y-G.cam;ctx.fillStyle="#9f3439";ctx.fillRect(h.x,y,h.w,h.h+7);
+        const y=h.y-G.cam;ctx.save();ctx.shadowColor="#ff4d4d";ctx.shadowBlur=12;ctx.fillStyle="#9f3439";ctx.fillRect(h.x,y,h.w,h.h+7);ctx.restore();
         ctx.fillStyle="#ef5a55";ctx.fillRect(h.x,y,h.w,4);
         ctx.fillStyle="#ff9b83";ctx.fillRect(h.x+8,y+4,Math.min(32,h.w-16),2);
         ctx.fillStyle="#6c2932";ctx.fillRect(h.x,y+h.h,h.w,6);
       }else{
         const top=h.dir===0?h.y-G.cam-h.h:h.y-G.cam;
-        ctx.fillStyle="#8d3035";ctx.fillRect(h.x,top,h.w,h.h);
+        ctx.save();ctx.shadowColor="#ff4d4d";ctx.shadowBlur=10;ctx.fillStyle="#8d3035";ctx.fillRect(h.x,top,h.w,h.h);ctx.restore();
         ctx.fillStyle="#d84749";ctx.fillRect(h.x+5,top,h.w-10,h.h);
         ctx.fillStyle="#f47c69";ctx.fillRect(h.x+8,top+3,5,h.h-6);
         const capY=h.dir===0?top:top+h.h-13;
@@ -454,6 +460,8 @@ function draw(){
   const px=player.x+12,py=player.y-G.cam+12;
   ctx.save();ctx.translate(px,py);
   ctx.scale(player.face,1);
+  const squash=player.squash;
+  ctx.scale(1+squash*.08,1-squash*.08);
   const flap=Math.sin(G.t*18)*2;
   ctx.fillStyle="#59d39b";ctx.fillRect(-11,-11,22,22);
   ctx.strokeStyle="#23654f";ctx.lineWidth=3;ctx.strokeRect(-11,-11,22,22);
@@ -471,6 +479,11 @@ function draw(){
     ctx.globalAlpha=Math.max(0,p.life/40);ctx.fillStyle="#f6df72";ctx.fillRect(p.x-G.cam*.0,p.y-G.cam,p.r,p.r);
   }
   ctx.globalAlpha=1;
+  const vign=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.22,W/2,H/2,Math.max(W,H)*.72);
+  vign.addColorStop(0,"#0000");vign.addColorStop(1,"#00102055");
+  ctx.fillStyle=vign;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="#ffffff08";
+  for(let sy=0;sy<H;sy+=4)ctx.fillRect(0,sy,W,1);
   ctx.restore();
 
   if(G.paused&&G.playing){
