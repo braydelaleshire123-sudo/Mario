@@ -17,7 +17,7 @@ button{border:4px solid #fff;border-radius:0;padding:10px 20px;font-family:'Cour
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="hud"><div class="pill">LEVEL <span id="levelNum">1</span>/9</div><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">❤ <span id="lives">3</span></div><div class="pill">⭐ <span id="score">0</span></div></div>
+<div id="hud"><div class="pill" id="powerHud">POWER: NONE</div><div class="pill">LEVEL <span id="levelNum">1</span>/9</div><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">❤ <span id="lives">3</span></div><div class="pill">⭐ <span id="score">0</span></div></div>
 <div id="help">A/D or ←/→ to move • Space/W/↑ to jump</div>
 <div id="screen"><div class="card"><h1 id="title">Game Over</h1><p id="subtitle"></p><button id="restart">Play Again</button></div></div>
 <script>
@@ -149,7 +149,7 @@ function solidCollision(prevX,prevY){
     player.vy=0;
     if(activeBlocks.includes(p) && !p.used){
      p.used=true;
-     powerups.push({x:p.x+p.w/2-14,y:p.y-28,w:28,h:28,vy:-7,life:12,type:['mushroom','flower','star','oneup','flower'][levelPower]});
+     powerups.push({x:p.x+p.w/2-14,y:p.y-28,w:28,h:28,vy:-7,life:30,type:['mushroom,'flower','star','oneup','flower'][levelPower]});
      score+=100;
      spawn(p.x+p.w/2,p.y,12,'#ffd54a');
     }
@@ -331,6 +331,7 @@ function enemy(e){
 function playerDraw(){
  const x=Math.floor(player.x-cam),y=Math.floor(player.y),flip=player.face<0;
  ctx.save();
+ if(powered&&powerType==='mushroom'){ctx.translate(x+(flip?player.w:0),y);ctx.scale(flip?-1:1,1);ctx.translate(-x-(flip?player.w:0),y);}
  if(flip){ctx.translate(x+player.w,y);ctx.scale(-1,1);}else ctx.translate(x,y);
  if(player.inv>0&&Math.floor(player.inv*12)%2===0)ctx.globalAlpha=.6;
  const step=Math.floor(player.run)%2;
