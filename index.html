@@ -74,45 +74,32 @@ function restart(){coins.forEach(o=>o.got=false);blocks.forEach(b=>b.used=false)
 document.getElementById('restart').onclick=restart;
 
 function solidCollision(prevX,prevY){
- const solids=platforms.concat(blocks);
+ const solids=platforms;
  player.ground=false;
 
- // Horizontal collision first so walls cannot push the player through platforms.
- if(player.vx!==0){
-  for(const p of solids){
-   if(player.y+player.h>p.y+2&&player.y<p.y+p.h-2&&player.x+player.w>p.x&&player.x<p.x+p.w){
-    if(player.vx>0) player.x=p.x-player.w;
-    else player.x=p.x+p.w;
-    player.vx=0;
-   }
-  }
- }
-
- // Vertical collision uses the previous position, so fast falls cannot tunnel through floors.
+ // Simple, reliable platform collision.
  if(player.vy>=0){
   for(const p of solids){
-   if(player.x+player.w>p.x+1&&player.x<p.x+p.w-1&&player.y+player.h>=p.y&&prevY+player.h<=p.y+1){
+   const horizontal=player.x+player.w>p.x&&player.x<p.x+p.w;
+   const crossed=prevY+player.h<=p.y&&player.y+player.h>=p.y;
+   if(horizontal&&crossed){
     player.y=p.y-player.h;
     player.vy=0;
     player.ground=true;
+    break;
    }
   }
  }else{
   for(const p of solids){
-   if(player.x+player.w>p.x+1&&player.x<p.x+p.w-1&&player.y<=p.y+p.h&&prevY>=p.y+p.h-1){
+   const horizontal=player.x+player.w>p.x&&player.x<p.x+p.w;
+   const crossed=prevY>=p.y+p.h&&player.y<=p.y+p.h;
+   if(horizontal&&crossed){
     player.y=p.y+p.h;
     player.vy=0;
-
-    // Hitting a mystery box from underneath activates it and spawns a power-up.
-    if(p.used===false){
-     p.used=true;
-     powerups.push({x:p.x+p.w/2-13,y:p.y-30,w:26,h:26,vy:-3,vx:0,life:10});
-     score+=50;
-     spawn(p.x+p.w/2,p.y,12,'#ffe066');
-    }
+    break;
    }
   }
- } 
+ }
 }
 function update(dt){
  if(ended)return;
