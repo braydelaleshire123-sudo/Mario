@@ -74,10 +74,10 @@ function restart(){coins.forEach(o=>o.got=false);blocks.forEach(b=>b.used=false)
 document.getElementById('restart').onclick=restart;
 
 function solidCollision(prevX,prevY){
- const solids=platforms;
+ const solids=platforms.concat(blocks);
  player.ground=false;
 
- // Simple, reliable platform collision.
+ // Reliable collision for platforms and mystery boxes.
  if(player.vy>=0){
   for(const p of solids){
    const horizontal=player.x+player.w>p.x&&player.x<p.x+p.w;
@@ -144,7 +144,25 @@ function update(dt){
  }
  if(player.power>0)player.power-=dt;
  for(const e of enemies)if(e.alive){e.x+=e.vx;if(e.x<e.min||e.x>e.max)e.vx*=-1;const box={x:e.x,y:e.y,w:e.w,h:e.h};if(overlap(player,box)){const stomp=player.vy>0&&player.y+player.h-player.vy<=e.y+12;if(stomp){e.alive=false;player.vy=-9;score+=250;spawn(e.x+20,e.y+20,16,'#b48cff')}else hurt()}}
- if(player.y>H+180)hurt();
+ if(player.y>H+180){
+  // Falling off a platform should not send the player all the way back to the start.
+  // Put them back on the nearest platform instead.
+  let nearest=null,best=Infinity;
+  for(const p of platforms){
+   if(player.x+player.w>p.x&&player.x<p.x+p.w){
+    const d=Math.abs(player.x-(p.x+p.w/2));
+    if(d<best){best=d;nearest=p}
+   }
+  }
+  if(nearest){
+   player.y=nearest.y-player.h;
+   player.vy=0;
+   player.ground=true;
+   player.inv=1.5;
+  }else{
+   resetPlayer();
+  }
+ }
  if(overlap(player,goal))end('LEVEL COMPLETE!','Coins: '+coinsGot+'  •  Score: '+score);
  const target=player.x-W*.35;cam+=(Math.max(0,Math.min(world.w-W,target))-cam)*Math.min(1,dt*7);
  shake=Math.max(0,shake-dt*30);
