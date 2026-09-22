@@ -42,7 +42,7 @@ let player,platforms,hazards,boxes,checkpoints,button,pineapple,audio;
 
 function buildWorld(){
   G.sectionH=Math.max(560,H*.94);
-  const sections=18, towerL=Math.max(26,W*.08), towerR=Math.min(W-26,W*.92), tw=towerR-towerL;
+  const sections=8, towerL=Math.max(26,W*.08), towerR=Math.min(W-26,W*.92), tw=towerR-towerL;
   G.totalH=sections*G.sectionH;
   platforms=[];hazards=[];boxes=[];checkpoints=[];
   const patterns=[
@@ -72,12 +72,12 @@ function buildWorld(){
   // GUARANTEED STARTER ROUTE: put a clear staircase directly above Tiny Square.
   // These are intentionally close together so the player can immediately see where to go.
   const starter=[
-    {x:towerL+tw*.12,y:G.totalH-55,w:tw*.28,h:18,section:17,i:100},
-    {x:towerL+tw*.55,y:G.totalH-155,w:tw*.25,h:18,section:17,i:101},
-    {x:towerL+tw*.30,y:G.totalH-270,w:tw*.28,h:18,section:17,i:102},
-    {x:towerL+tw*.62,y:G.totalH-390,w:tw*.24,h:18,section:17,i:103},
-    {x:towerL+tw*.20,y:G.totalH-510,w:tw*.30,h:18,section:17,i:104},
-    {x:towerL+tw*.52,y:G.totalH-635,w:tw*.27,h:18,section:17,i:105}
+    {x:towerL+tw*.12,y:G.totalH-55,w:tw*.28,h:18,section:7,i:100},
+    {x:towerL+tw*.55,y:G.totalH-155,w:tw*.25,h:18,section:7,i:101},
+    {x:towerL+tw*.30,y:G.totalH-270,w:tw*.28,h:18,section:7,i:102},
+    {x:towerL+tw*.62,y:G.totalH-390,w:tw*.24,h:18,section:7,i:103},
+    {x:towerL+tw*.20,y:G.totalH-510,w:tw*.30,h:18,section:7,i:104},
+    {x:towerL+tw*.52,y:G.totalH-635,w:tw*.27,h:18,section:7,i:105}
   ];
   platforms.push(...starter);
 
