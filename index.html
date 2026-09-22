@@ -127,6 +127,8 @@ function update(){
   player.vx+=(right-left)*.72;player.vx*=.84;player.vx=Math.max(-6,Math.min(6,player.vx));
   const oldBottom=player.y+player.h;
   player.vy+=.52;player.x+=player.vx;player.y+=player.vy;
+  // Keep the opening spawn locked safely to its starter platform until the player moves.
+  if(G.spawnGrace>0 && player.y>G.totalH-140){const sp=platforms.find(p=>p.i===100);if(sp){player.y=sp.y-player.h;player.vy=0;player.onGround=true;player.airJumps=3;}}
   const L=Math.max(18,W*.025),R=Math.min(W-18,W*.975);
   player.x=Math.max(L,Math.min(R-player.w,player.x));
   if(player.flapFx>0)player.flapFx--;
@@ -166,7 +168,7 @@ function update(){
 function pineappleBox(){return{x:pineapple.x-20,y:pineapple.y-25,w:40,h:55}}
 
 function draw(){
-  const L=Math.max(26,W*.08),R=Math.min(W-26,W*.92);
+  const L=Math.max(18,W*.025),R=Math.min(W-18,W*.975);
   ctx.fillStyle="#2c91ad";ctx.fillRect(0,0,W,H);
   // Large clean tower chamber.
   ctx.fillStyle="#3da0b8";ctx.fillRect(L,0,R-L,H);
