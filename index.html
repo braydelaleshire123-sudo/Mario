@@ -358,15 +358,11 @@ function playerDraw(){
  ctx.fillRect(5,0,29,8);ctx.fillRect(11,-4,18,5);
  ctx.fillStyle=powered&&powerType==='flower'?'#e53935':'#fff';
  ctx.fillRect(26,5,9,4);
- // power-specific visual effects
- if(powered&&powerType==='mushroom'){
-   ctx.fillStyle='#e53935';ctx.fillRect(2,7,8,8);ctx.fillRect(28,7,8,8);
-   ctx.fillStyle='#fff';ctx.fillRect(4,9,4,4);ctx.fillRect(30,9,4,4);
- }else if(powered&&powerType==='flower'){
-   ctx.fillStyle='#fff';ctx.fillRect(2,25,5,13);ctx.fillRect(29,25,5,13);
- }else if(powered&&powerType==='star'){
-   ctx.fillStyle='#ffd83d';ctx.fillRect(0,17,5,5);ctx.fillRect(29,17,5,5);
-   ctx.fillStyle='#ff5a5a';ctx.fillRect(2,39,5,5);ctx.fillRect(27,39,5,5);
+ // simple power effect: two white lines
+ if(powered){
+   ctx.fillStyle='#fff';
+   ctx.fillRect(2,25,4,13);
+   ctx.fillRect(30,25,4,13);
  }
  ctx.restore();
 }function render(){
