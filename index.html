@@ -105,11 +105,11 @@ function buildWorld(){
     });
     for(const h of room.h){
       if(h[0]==="pipe"){
-        hazards.push({type:"pipe",x:L+tw*h[1],y:worldY(s,h[2]),w:Math.max(42,tw*h[3]),h:Math.min(150,Math.max(95,h[2]*.58)),dir:h[4],phase:s*2});
+        hazards.push({type:"pipe",section:s,x:L+tw*h[1],y:worldY(s,h[2]),w:Math.max(42,tw*h[3]),h:Math.min(150,Math.max(95,h[2]*.58)),dir:h[4],phase:s*2});
       }else if(h[0]==="beam"){
-        hazards.push({type:"beam",x:L+tw*h[1],y:worldY(s,h[2]),w:Math.max(90,tw*h[3]),h:13,phase:s});
+        hazards.push({type:"beam",section:s,x:L+tw*h[1],y:worldY(s,h[2]),w:Math.max(90,tw*h[3]),h:13,phase:s});
       }else{
-        hazards.push({type:"blade",x:L+tw*h[1],y:worldY(s,h[2]),r:h[3],phase:s});
+        hazards.push({type:"blade",section:s,x:L+tw*h[1],y:worldY(s,h[2]),r:h[3],phase:s});
       }
     }
     if(room.box!==null){
@@ -297,7 +297,7 @@ function update(){
   for(const c of checkpoints){
     if(player.y<c.y+42&&player.y>c.y-45&&player.x+player.w>c.x&&player.x<c.x+c.w)saveCheckpoint(c);
   }
-  const newSection=Math.max(0,Math.min(sectionCount-1,Math.floor((G.totalH()-player.y)/sectionH)));
+  const newSection=Math.max(0,Math.min(sectionCount-1,sectionCount-1-Math.floor(player.y/sectionH)));
   if(newSection!==G.section){
     if(newSection<G.section){G.section=newSection;G.roomTitle=rooms[newSection].name;toast("ROOM "+(sectionCount-newSection)+" • "+rooms[newSection].name)}
     else G.section=newSection;
