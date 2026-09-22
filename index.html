@@ -47,61 +47,47 @@ function buildWorld(){
   platforms=[];hazards=[];boxes=[];checkpoints=[];
   // Hand-authored room patterns: platforms are staggered vertically and horizontally
   // so the route reads like a sequence of deliberate jumps, not a pile of rectangles.
+  // Hand-designed tower rooms. Each room is a small jump sequence with
+  // intentionally separated landings; later rooms require more air-jump control.
   const rooms=[
-    [[.07,74,.18],[.34,174,.17],[.68,274,.16],[.42,374,.17],[.12,474,.16],[.58,574,.17]],
-    [[.62,72,.17],[.30,172,.16],[.08,272,.17],[.42,372,.16],[.72,472,.16],[.48,572,.17]],
-    [[.16,70,.17],[.52,168,.16],[.76,268,.15],[.38,368,.16],[.10,468,.16],[.56,568,.15]],
-    [[.70,76,.16],[.48,178,.15],[.18,278,.17],[.58,378,.15],[.30,478,.16],[.72,578,.15]]
+    [[.06,70,.22],[.34,165,.18],[.64,260,.16],[.40,355,.18],[.10,450,.17],[.57,550,.16]],
+    [[.64,70,.19],[.39,160,.16],[.12,250,.18],[.50,345,.16],[.73,440,.15],[.31,545,.17]],
+    [[.14,68,.18],[.48,155,.17],[.72,245,.15],[.27,335,.16],[.56,430,.15],[.08,535,.17]],
+    [[.72,70,.17],[.52,160,.16],[.20,250,.18],[.43,340,.15],[.76,435,.15],[.30,545,.16]],
+    [[.08,70,.17],[.30,155,.14],[.62,245,.14],[.43,335,.13],[.72,430,.13],[.18,535,.14]],
+    [[.72,70,.16],[.52,155,.13],[.22,245,.13],[.08,335,.12],[.48,430,.13],[.70,535,.13]]
   ];
   for(let s=0;s<sections;s++){
     const base=G.totalH-(s+1)*G.sectionH, d=s/sections, pat=rooms[s%rooms.length];
     pat.forEach((a,i)=>{
-      const tighten=Math.max(.72,1-d*.28);
-      platforms.push({x:towerL+tw*a[0],y:base+G.sectionH-a[1],w:Math.max(58,tw*a[2]*tighten),h:18,section:s,i});
+      const tighten=Math.max(.58,1-d*.40);
+      platforms.push({x:towerL+tw*a[0],y:base+G.sectionH-a[1],w:Math.max(46,tw*a[2]*tighten),h:18,section:s,i});
     });
-    // Each room uses its own platforms; no stacked transition platform.
-    // Refill boxes become less frequent as the climb gets harder.
-    if(s<sections-1 && (s<10||s%2===0))
-      boxes.push({x:towerL+tw*(s%2?.42:.58),y:base+115,w:30,h:26,used:false,phase:s});
-    // Checkpoint every three screens, like a real long tower.
+    if(s<sections-1 && (s<7 || s%3===0))
+      boxes.push({x:towerL+tw*(s%2?.43:.57),y:base+115,w:30,h:26,used:false,phase:s});
     if(s>0 && s%3===0)
-      checkpoints.push({x:towerL+tw*(s%2?.74:.12),y:base+62,w:54,h:12,section:s});
-    // Progressive challenge: early rooms teach movement, later rooms combine hazards.
-    if(s>=2){
-      hazards.push({type:"beam",x:towerL+tw*(s%2?.08:.43),y:base+G.sectionH-250,w:tw*(s<8?.38:.48),h:14,phase:s});
-    }
-    if(s>=5){
-      hazards.push({type:"beam",x:towerL+tw*(s%2?.46:.06),y:base+G.sectionH-430,w:tw*.28,h:14,phase:s+2});
-    }
-    if(s>=7 && s%2===1){
-      hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-350,r:20+Math.min(8,Math.floor(s/4)),phase:s});
-    }
-    if(s>=9 && s%3===0){
-      hazards.push({type:"pipe",x:towerL+tw*(s%2?.76:.18),y:base+G.sectionH-190,w:40,h:145});
-    }
-    if(s>=12){
-      hazards.push({type:"beam",x:towerL+tw*.24,y:base+G.sectionH-110,w:tw*.52,h:12,phase:s+5});
-    }
-    if(s>=15 && s%2===0){
-      hazards.push({type:"blade",x:towerL+tw*(.22+(s%4)*.18),y:base+G.sectionH-500,r:24,phase:s+8});
-    }
+      checkpoints.push({x:towerL+tw*(s%2?.74:.10),y:base+62,w:54,h:12,section:s});
+    // Progressive hazards: first isolated bars, then combinations and moving blades.
+    if(s>=3) hazards.push({type:"beam",x:towerL+tw*(s%2?.08:.45),y:base+G.sectionH-235,w:tw*.32,h:14,phase:s});
+    if(s>=7) hazards.push({type:"beam",x:towerL+tw*(s%2?.48:.12),y:base+G.sectionH-425,w:tw*.25,h:12,phase:s+2});
+    if(s>=9 && s%2===1) hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-325,r:20+Math.min(10,Math.floor(s/4)),phase:s});
+    if(s>=12 && s%3===0) hazards.push({type:"pipe",x:towerL+tw*(s%2?.72:.18),y:base+G.sectionH-185,w:38,h:125});
+    if(s>=15) hazards.push({type:"blade",x:towerL+tw*(s%2?.28:.66),y:base+G.sectionH-485,r:23,phase:s+6});
     if(s>=18){
-      // Late tower rooms deliberately create narrow timing windows.
-      platforms.push({x:towerL+tw*(s%2?.04:.78),y:base+330,w:Math.max(48,tw*.12),h:18,section:s,i:30+s});
-      hazards.push({type:"pipe",x:towerL+tw*(s%2?.45:.48),y:base+G.sectionH-225,w:34,h:175});
+      hazards.push({type:"beam",x:towerL+tw*.22,y:base+G.sectionH-115,w:tw*.56,h:12,phase:s+9});
+      hazards.push({type:"pipe",x:towerL+tw*(s%2?.48:.48),y:base+G.sectionH-255,w:34,h:145});
     }
     if(s>=21){
-      hazards.push({type:"beam",x:towerL+tw*.10,y:base+G.sectionH-520,w:tw*.80,h:12,phase:s+11});
-      hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-160,r:28,phase:s+12});
+      hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-175,r:28,phase:s+12});
+      hazards.push({type:"beam",x:towerL+tw*.08,y:base+G.sectionH-530,w:tw*.84,h:11,phase:s+14});
     }
   }
   // Bottom starting room: deliberately safe and compact.
   const starter=[
-    {x:towerL+tw*.10,y:G.totalH-70,w:tw*.32,h:18,section:23,i:100},
-    {x:towerL+tw*.52,y:G.totalH-180,w:tw*.25,h:18,section:23,i:101},
-    {x:towerL+tw*.26,y:G.totalH-305,w:tw*.28,h:18,section:23,i:102},
-    {x:towerL+tw*.60,y:G.totalH-430,w:tw*.23,h:18,section:23,i:103},
-    {x:towerL+tw*.72,y:G.totalH-555,w:tw*.16,h:18,section:23,i:104}
+    {x:towerL+tw*.08,y:G.totalH-70,w:tw*.28,h:18,section:23,i:100},
+    {x:towerL+tw*.52,y:G.totalH-185,w:tw*.22,h:18,section:23,i:101},
+    {x:towerL+tw*.28,y:G.totalH-305,w:tw*.20,h:18,section:23,i:102},
+    {x:towerL+tw*.62,y:G.totalH-425,w:tw*.18,h:18,section:23,i:103}
   ];
   platforms.push(...starter);
   button={x:W/2-30,y:48,w:60,h:26,hit:false};
@@ -215,8 +201,10 @@ function update(){
   for(const c of checkpoints){
     if(player.y<c.y+35&&player.y>c.y-40&&player.x+player.w>c.x&&player.x<c.x+c.w)G.checkpoint=Math.min(G.checkpoint,c.section);
   }
-  if(overlap(player,button)){button.hit=true}
-  if(button.hit&&overlap(player,pineappleBox())){pineapple.collected=true;win();return}
+  if(player.y<G.sectionH*1.05){
+    if(overlap(player,button)){button.hit=true}
+    if(button.hit&&overlap(player,pineappleBox())){pineapple.collected=true;win();return}
+  }
   if(player.y>G.totalH+150 && G.spawnGrace<=0){checkpointRespawn();return}
   const target=H*.55;
   G.cam=player.y-target;
