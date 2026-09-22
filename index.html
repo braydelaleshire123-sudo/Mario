@@ -62,6 +62,8 @@ const scene=new BABYLON.Scene(engine);
 scene.clearColor=new BABYLON.Color4(.008,.014,.018,1);
 scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;
 scene.fogDensity=.012;
+scene.fogStart=7;
+scene.fogEnd=105;
 scene.fogColor=new BABYLON.Color3(.018,.035,.042);
 scene.imageProcessingConfiguration.contrast=1.18;
 scene.imageProcessingConfiguration.exposure=1.05;
@@ -229,6 +231,7 @@ function buildFacility(){
   accessCard.rotation.y=.4;
   label("SECURITY CARD",new BABYLON.Vector3(5,2.2,57), "#9bd8dd");
   controlDoor=doorway(0,70.6,"x","controlFinal");
+  for(const d of doors.slice(0,-1)){d.checkCollisions=false;d.isVisible=false;d.metadata.open=true;}
   monitor(0,75);
   monitor(-5,76);monitor(5,76);
   crate(-6,4);crate(6,23);crate(-6,42);crate(5,61);
@@ -265,7 +268,7 @@ function powerOn(panel){
   scene.fogDensity=Math.max(.006,.012-poweredZones*.0018);
   setObjective(poweredZones<3?"Restore "+(3-poweredZones)+" more electrical zone"+(poweredZones===2?"":"s"):"Find the security access card");
   showMessage("ELECTRICAL ZONE "+panel.id+" RESTORED");
-  for(const d of doors)d.metadata.open=false;
+  for(const d of doors.slice(0,-1)){d.metadata.open=true;d.checkCollisions=false;d.isVisible=false;}
   if(poweredZones===3){
     for(const s of screens)s.material=mats.whiteE;
     setObjective("Find the security access card in the generator room");
