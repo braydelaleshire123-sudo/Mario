@@ -31,10 +31,8 @@ addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 
 let level=1;
 let powerType='';
-const worlds=[
- {w:12000},
- {w:9000}
-];
+let levelPower=0;
+const worlds=[{w:12000},{w:9000},{w:10500},{w:9500},{w:11000},{w:10000},{w:11500},{w:9800},{w:12000}];
 let world=worlds[0];
 const player={x:120,y:300,w:34,h:52,vx:0,vy:0,ground:false,coyote:0,jumpBuffer:0,face:1,inv:0,power:0,run:0};
 const platforms=[
@@ -94,6 +92,17 @@ const level2Enemies=[
 {x:7500,y:518,w:40,h:42,vx:1.7,min:7200,max:7950,alive:true}
 ];
 const goal2={x:8850,y:395,w:26,h:105};
+const levelData=[
+{platforms:level2Platforms,blocks:level2Blocks,enemies:level2Enemies,goal:goal2},
+{platforms:[{x:0,y:560,w:900,h:120},{x:1050,y:470,w:600,h:210},{x:1800,y:560,w:750,h:120},{x:2750,y:430,w:700,h:250},{x:3650,y:560,w:900,h:120},{x:4700,y:470,w:650,h:210},{x:5550,y:560,w:900,h:120},{x:6650,y:450,w:700,h:230},{x:7550,y:560,w:1100,h:120}],blocks:[],enemies:[],goal:{x:8500,y:455,w:26,h:105}},
+{platforms:[{x:0,y:560,w:1000,h:120},{x:1150,y:500,w:600,h:180},{x:1900,y:560,w:850,h:120},{x:2900,y:470,w:650,h:210},{x:3700,y:560,w:1000,h:120},{x:4900,y:450,w:700,h:230},{x:5800,y:560,w:1100,h:120},{x:7100,y:480,w:800,h:200},{x:8100,y:560,w:1200,h:120}],blocks:[],enemies:[],goal:{x:9100,y:455,w:26,h:105}},
+{platforms:[{x:0,y:560,w:800,h:120},{x:950,y:450,w:650,h:230},{x:1750,y:560,w:600,h:120},{x:2500,y:400,w:750,h:280},{x:3400,y:560,w:850,h:120},{x:4450,y:430,w:700,h:250},{x:5350,y:560,w:850,h:120},{x:6400,y:420,w:750,h:260},{x:7350,y:560,w:1200,h:120}],blocks:[],enemies:[],goal:{x:9150,y:455,w:26,h:105}},
+{platforms:[{x:0,y:560,w:1200,h:120},{x:1350,y:480,w:700,h:200},{x:2200,y:560,w:700,h:120},{x:3050,y:440,w:700,h:240},{x:3900,y:560,w:900,h:120},{x:5000,y:470,w:650,h:210},{x:5850,y:560,w:950,h:120},{x:7000,y:450,w:700,h:230},{x:7900,y:560,w:1300,h:120}],blocks:[],enemies:[],goal:{x:10000,y:455,w:26,h:105}},
+{platforms:[{x:0,y:560,w:850,h:120},{x:1000,y:430,w:700,h:250},{x:1850,y:560,w:650,h:120},{x:2650,y:460,w:650,h:220},{x:3450,y:560,w:1000,h:120},{x:4650,y:420,w:750,h:260},{x:5550,y:560,w:900,h:120},{x:6700,y:450,w:700,h:230},{x:7600,y:560,w:1100,h:120}],blocks:[],enemies:[],goal:{x:8550,y:455,w:26,h:105}},
+{platforms:[{x:0,y:560,w:1000,h:120},{x:1150,y:500,w:700,h:180},{x:2000,y:560,w:600,h:120},{x:2750,y:420,w:700,h:260},{x:3600,y:560,w:900,h:120},{x:4700,y:480,w:650,h:200},{x:5550,y:560,w:900,h:120},{x:6650,y:400,w:800,h:280},{x:7650,y:560,w:1300,h:120}],blocks:[],enemies:[],goal:{x:9350,y:455,w:26,h:105}},
+{platforms:[{x:0,y:560,w:900,h:120},{x:1050,y:460,w:650,h:220},{x:1850,y:560,w:750,h:120},{x:2750,y:450,w:750,h:230},{x:3650,y:560,w:900,h:120},{x:4750,y:430,w:700,h:250},{x:5650,y:560,w:900,h:120},{x:6750,y:440,w:800,h:240},{x:7750,y:560,w:1400,h:120}],blocks:[],enemies:[],goal:{x:9000,y:455,w:26,h:105}}
+];
+
 let cam=0,coinsGot=0,lives=3,score=0,ended=false,last=performance.now(),shake=0;
 let activePlatforms=platforms,activeBlocks=blocks,activeEnemies=enemies,activeGoal=goal;
 const particles=[];
@@ -101,23 +110,11 @@ function spawn(x,y,n,color){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.ran
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
 function resetPlayer(){player.x=120;player.y=300;player.vx=0;player.vy=0;player.ground=false;player.inv=1.5;cam=0}
 function startLevel2(){
- level=2;
- world=worlds[1];
- activePlatforms=level2Platforms;
- activeBlocks=level2Blocks;
- activeEnemies=level2Enemies;
- activeGoal=goal2;
- coinsGot=0;
- coins.length=0;
- powerups.length=0;
- activeBlocks.forEach(b=>b.used=false);
- activeEnemies.forEach(e=>e.alive=true);
- for(let i=0;i<12;i++) coins.push({x:180+i*55,y:470,got:false,t:Math.random()*6.28});
- for(let i=0;i<8;i++) coins.push({x:1120+i*60,y:410,got:false,t:Math.random()*6.28});
- for(let i=0;i<10;i++) coins.push({x:1900+i*55,y:470,got:false,t:Math.random()*6.28});
- for(let i=0;i<12;i++) coins.push({x:3450+i*55,y:470,got:false,t:Math.random()*6.28});
- for(let i=0;i<10;i++) coins.push({x:5300+i*55,y:470,got:false,t:Math.random()*6.28});
- for(let i=0;i<12;i++) coins.push({x:7200+i*55,y:470,got:false,t:Math.random()*6.28});
+ level++; if(level>9){end('GAME COMPLETE!','You finished all 9 levels! Score: '+score);return;}
+ const d=levelData[level-2]; world=worlds[level-1]; activePlatforms=d.platforms;activeBlocks=d.blocks;activeEnemies=d.enemies;activeGoal=d.goal;
+ coinsGot=0;coins.length=0;powerups.length=0;levelPower=(level-1)%5;
+ activeBlocks.forEach(b=>b.used=false);activeEnemies.forEach(e=>e.alive=true);
+ for(let i=0;i<14;i++)coins.push({x:180+i*55,y:470,got:false,t:Math.random()*6.28});
  player.x=120;player.y=300;player.vx=0;player.vy=0;player.ground=false;player.inv=2;cam=0;
 }
 function hurt(){if(player.inv>0)return;lives--;shake=12;spawn(player.x+player.w/2,player.y+player.h/2,18,'#ff6b6b');if(lives<=0){end('GAME OVER','You scored '+score+' points.')}else resetPlayer()}
@@ -150,7 +147,7 @@ function solidCollision(prevX,prevY){
     player.vy=0;
     if(activeBlocks.includes(p) && !p.used){
      p.used=true;
-     powerups.push({x:p.x+p.w/2-14,y:p.y-28,w:28,h:28,vy:-7,life:12,type:level===1?'speed':'shield'});
+     powerups.push({x:p.x+p.w/2-14,y:p.y-28,w:28,h:28,vy:-7,life:12,type:['speed','shield','jump','coin','star'][levelPower]});
      score+=100;
      spawn(p.x+p.w/2,p.y,12,'#ffd54a');
     }
@@ -164,9 +161,11 @@ function update(dt){
  dt=Math.min(dt,0.033);
  if(player.inv>0)player.inv-=dt;
  if(player.power>0)player.power-=dt;
+ if(player.power<=0)powerType='';
  const left=keys['arrowleft']||keys['a'],right=keys['arrowright']||keys['d'];
  const boosted=player.power>0&&powerType==='speed';
  const accel=player.ground?(boosted?64:48):34, max=boosted?11:7.5;
+ if(player.power>0&&powerType==='jump'&&jumpPressed)player.vy=-17;
  if(left){player.vx-=accel*dt;player.face=-1} if(right){player.vx+=accel*dt;player.face=1}
  if(!left&&!right){const drag=player.ground?12:3;player.vx-=Math.sign(player.vx)*Math.min(Math.abs(player.vx),drag*dt)}
  player.vx=Math.max(-max,Math.min(max,player.vx));
@@ -181,7 +180,7 @@ function update(dt){
  if(player.x<0)player.x=0;
  solidCollision(prevX,prevY);
  if(player.ground&&Math.abs(player.vx)>1)player.run+=dt*12;else player.run+=dt*4;
- for(const o of coins)if(!o.got){o.t+=dt*5;const box={x:o.x-11,y:o.y-11,w:22,h:22};if(overlap(player,box)){o.got=true;coinsGot++;score+=100;spawn(o.x,o.y,10,'#ffd54a')}}
+ for(const o of coins)if(!o.got){o.t+=dt*5;const box={x:o.x-11,y:o.y-11,w:22,h:22};if(overlap(player,box)){o.got=true;coinsGot++;score+=100+(powerType==='coin'&&player.power>0?100:0);spawn(o.x,o.y,10,'#ffd54a')}}
  for(let i=powerups.length-1;i>=0;i--){
   const p=powerups[i];
   p.vy+=24*dt;p.y+=p.vy*dt;
@@ -194,7 +193,7 @@ function update(dt){
   if(overlap(player,p)){
    player.power=10;
    powerType=p.type;
-   if(p.type==='shield') player.inv=10;
+   if(p.type==='shield'||p.type==='star') player.inv=10;
    score+=500;
    spawn(p.x+p.w/2,p.y+p.h/2,20,'#7df9ff');
    powerups.splice(i,1);
@@ -224,11 +223,7 @@ function update(dt){
   }
  }
  if(overlap(player,activeGoal)){
-  if(level===1){
-   startLevel2();
-  }else{
-   end('GAME COMPLETE!','You finished both levels! Coins: '+coinsGot+'  •  Score: '+score);
-  }
+  if(level<9){startLevel2();}else{end('GAME COMPLETE!','You finished all 9 levels! Coins: '+coinsGot+'  •  Score: '+score);}
 }
  const target=player.x-W*.35;cam+=(Math.max(0,Math.min(world.w-W,target))-cam)*Math.min(1,dt*7);
  shake=Math.max(0,shake-dt*30);
@@ -254,7 +249,7 @@ function block(b){
  const x=b.x-cam;ctx.fillStyle=b.used?'#8a632f':'#d98d2b';ctx.fillRect(x,b.y,b.w,b.h);ctx.strokeStyle='#7b4b1a';ctx.lineWidth=3;ctx.strokeRect(x+1,b.y+1,b.w-2,b.h-2);
  ctx.fillStyle=b.used?'#b08a55':'#ffd77a';ctx.fillRect(x+7,b.y+7,b.w-14,5);ctx.font='bold 27px Arial';ctx.textAlign='center';ctx.fillStyle=b.used?'#d8c7ad':'#fff2a9';ctx.fillText(b.used?'!':'?',x+b.w/2,b.y+37);
 }
-function powerup(p){const x=p.x-cam,y=p.y;ctx.save();ctx.translate(x+p.w/2,y+p.h/2);ctx.rotate(performance.now()/500);ctx.fillStyle=p.type==='speed'?'#ff9f43':'#65e6ff';ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5,r=i%2?8:14;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.fillText(p.type==='speed'?'S':'S',0,4);ctx.restore()}
+function powerup(p){const x=p.x-cam,y=p.y;ctx.save();ctx.translate(x+p.w/2,y+p.h/2);ctx.rotate(performance.now()/500);ctx.fillStyle={speed:'#ff9f43',shield:'#65e6ff',jump:'#9b7bff',coin:'#ffd43b',star:'#ff5c8a'}[p.type]||'#fff';ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5,r=i%2?8:14;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.fillText({speed:'S',shield:'O',jump:'J',coin:'C',star:'★'}[p.type]||'?',0,4);ctx.restore()}
 function coin(o){const x=o.x-cam,y=o.y+Math.sin(o.t)*4;ctx.save();ctx.translate(x,y);ctx.scale(.45+.55*Math.abs(Math.cos(o.t*.55)),1);ctx.fillStyle='#ffd43b';ctx.beginPath();ctx.ellipse(0,0,12,16,0,0,7);ctx.fill();ctx.strokeStyle='#b9790b';ctx.lineWidth=2;ctx.stroke();ctx.restore()}
 function enemy(e){const x=e.x-cam;ctx.fillStyle='#6938a8';ctx.beginPath();ctx.roundRect(x,e.y,e.w,e.h,10);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(x+8,e.y+9,9,10);ctx.fillRect(x+24,e.y+9,9,10);ctx.fillStyle='#111';ctx.fillRect(x+11,e.y+12,4,5);ctx.fillRect(x+27,e.y+12,4,5);ctx.fillStyle='#3a225f';ctx.fillRect(x-3,e.y+e.h-6,16,8);ctx.fillRect(x+27,e.y+e.h-6,16,8)}
 function playerDraw(){
@@ -267,7 +262,7 @@ function playerDraw(){
  ctx.fillStyle='#111';ctx.fillRect(5,-16,4,5);ctx.fillStyle='#fff';ctx.fillRect(-8,7,16,4);
  ctx.restore();if(player.power>0)ctx.restore();
 }
-function drawGoal(){const x=activeGoal.x-cam;ctx.fillStyle='#eee';ctx.fillRect(x,activeGoal.y,7,105);ctx.fillStyle='#ef476f';ctx.beginPath();ctx.moveTo(x+7,activeGoal.y);ctx.lineTo(x+58,activeGoal.y+18);ctx.lineTo(x+7,activeGoal.y+37);ctx.fill();ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x+3.5,activeGoal.y,8,0,7);ctx.fill()}
+function drawGoal(){const x=activeGoal.x-cam;ctx.fillStyle='#fff';ctx.font='bold 18px Arial';ctx.textAlign='left';ctx.fillText('LEVEL '+level,x-20,activeGoal.y-18);ctx.fillStyle='#eee';ctx.fillRect(x,activeGoal.y,7,105);ctx.fillStyle='#ef476f';ctx.beginPath();ctx.moveTo(x+7,activeGoal.y);ctx.lineTo(x+58,activeGoal.y+18);ctx.lineTo(x+7,activeGoal.y+37);ctx.fill();ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x+3.5,activeGoal.y,8,0,7);ctx.fill()}
 function render(){
  drawBG();const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;ctx.save();ctx.translate(sx,sy);
  for(const p of activePlatforms)platform(p);for(const b of activeBlocks)block(b);for(const o of coins)if(!o.got&&o.x-cam>-30&&o.x-cam<W+30)coin(o);for(const e of activeEnemies)if(e.alive)enemy(e);for(const p of powerups)powerup(p);drawGoal();playerDraw();
