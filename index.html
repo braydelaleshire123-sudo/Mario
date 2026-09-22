@@ -87,7 +87,7 @@ function buildWorld(){
   const startPlatform=starter[0];
   player={x:startPlatform.x+startPlatform.w*.5-10,y:startPlatform.y-20,w:20,h:20,vx:0,vy:0,onGround:true,airJumps:3};
   G.spawnGrace=120;
-  G.cam=Math.max(0,G.totalH-H);G.checkpoint=0;
+  G.cam=Math.max(0,G.totalH-H);G.checkpoint=sections-1;
 }
 
 function music(){
@@ -151,7 +151,7 @@ function update(){
     }
   }
   for(const c of checkpoints){
-    if(player.y<c.y+35&&player.y>c.y-40&&player.x+player.w>c.x&&player.x<c.x+c.w)G.checkpoint=Math.max(G.checkpoint,c.section);
+    if(player.y<c.y+35&&player.y>c.y-40&&player.x+player.w>c.x&&player.x<c.x+c.w)G.checkpoint=Math.min(G.checkpoint,c.section);
   }
   if(overlap(player,button)){button.hit=true}
   if(button.hit&&overlap(player,pineappleBox())){pineapple.collected=true;win();return}
