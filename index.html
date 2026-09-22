@@ -149,7 +149,7 @@ function solidCollision(prevX,prevY){
     player.vy=0;
     if(activeBlocks.includes(p) && !p.used){
      p.used=true;
-     powerups.push({x:p.x+p.w/2-14,y:p.y-28,w:28,h:28,vy:-7,life:30,type:['mushroom,'flower','star','oneup','flower'][levelPower]});
+     powerups.push({x:p.x+p.w/2-14,y:p.y-28,w:28,h:28,vy:-7,life:30,type:['mushroom','flower','star','oneup','flower'][levelPower]});
      score+=100;
      spawn(p.x+p.w/2,p.y,12,'#ffd54a');
     }
