@@ -233,20 +233,54 @@ function update(dt){
 }
 function cloud(x,y,s){ctx.fillStyle='#ffffffb8';ctx.fillRect(x-20*s,y-12*s,105*s,24*s);ctx.fillRect(x+5*s,y-25*s,45*s,13*s)}
 function drawBG(){
- const sky=['#5c94fc','#1d2b53','#4b692f','#f4a43b','#7b8fa1','#1b3b6f','#5b3b88','#4f772d','#31506b'][(level-1)%9];
- const ground=['#87ceeb','#243b6b','#8fbd5a','#ffd27a','#b9c7d1','#4c86a8','#b184c4','#a8c96b','#8ca8b8'][(level-1)%9];
+ const sky=['#ff7a18','#d43b00','#7a1200','#ffb000','#5a0a00','#ff4b00','#8f1d00','#ff6a00','#6b1400'][(level-1)%9];
  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
- if(level===2||level===6||level===7){
-  ctx.fillStyle='#fff';for(let i=0;i<55;i++){let x=(i*137-cam*.08)%W;if(x<0)x+=W;let y=25+(i*43)%230;ctx.fillRect(Math.floor(x/4)*4,Math.floor(y/4)*4,4,4);}
- }else{
-  ctx.fillStyle='#fff1a8';ctx.fillRect(W-130,55,64,64);ctx.fillStyle=sky;ctx.fillRect(W-118,55,12,12);ctx.fillRect(W-130,67,12,12);ctx.fillRect(W-78,107,12,12);
- }
+ // Pixel-fire sky: layered block clouds, smoke, sparks, and a huge blocky sun.
+ ctx.fillStyle='#ffdf3b';ctx.fillRect(W-150,55,80,80);
+ ctx.fillStyle='#ff9d00';ctx.fillRect(W-170,75,20,40);ctx.fillRect(W-70,75,20,40);ctx.fillRect(W-130,35,40,20);
+ // distant black-red mountains
  for(let layer=0;layer<3;layer++){
-  const col=layer===0?'#4b79a1':layer===1?'#356b45':'#245032';ctx.fillStyle=col;
-  for(let i=0;i<18;i++){let x=i*500-cam*(.10+layer*.12),base=H*.72+layer*34;ctx.fillRect(x,base-70-layer*25,260,70+layer*25);ctx.fillRect(x+45,base-110-layer*30,170,40);ctx.fillRect(x+85,base-140-layer*25,90,30);}
+  ctx.fillStyle=layer===0?'#7d1800':layer===1?'#4b0d00':'#250600';
+  for(let i=0;i<18;i++){
+   let x=Math.floor(i*520-cam*(.08+layer*.12));
+   let base=H*.70+layer*35;
+   ctx.fillRect(x,base-100-layer*20,280,100+layer*20);
+   ctx.fillRect(x+55,base-145-layer*25,170,45);
+   ctx.fillRect(x+105,base-175-layer*20,75,30);
+  }
  }
- if(level!==2&&level!==6&&level!==7)for(let i=0;i<12;i++){let x=i*700-cam*.15,y=75+(i%3)*55;ctx.fillStyle='#fff';ctx.fillRect(x,y+12,100,28);ctx.fillRect(x+18,y,48,28);ctx.fillRect(x+58,y+5,38,35);}
- ctx.fillStyle=ground;for(let i=0;i<30;i++){let x=i*300-cam*.42,y=H*.86;ctx.fillRect(x,y-34,90,34);ctx.fillRect(x+18,y-52,54,18);}
+ // giant pixel fire clouds
+ for(let i=0;i<16;i++){
+  let x=Math.floor(i*430-cam*.18), y=105+(i%4)*55;
+  ctx.fillStyle=i%2?'#ffcf33':'#ff5a00';
+  ctx.fillRect(x,y+18,120,34);
+  ctx.fillRect(x+20,y,55,25);
+  ctx.fillRect(x+70,y+8,45,42);
+  ctx.fillStyle='#ffea66';
+  ctx.fillRect(x+34,y+8,20,12);
+ }
+ // floating embers
+ ctx.fillStyle='#ffe66d';
+ for(let i=0;i<45;i++){
+  let x=(i*151-cam*.35)%W;if(x<0)x+=W;
+  let y=35+(i*67)%360;
+  let sz=(i%3===0)?6:4;
+  ctx.fillRect(Math.floor(x/4)*4,Math.floor(y/4)*4,sz,sz);
+ }
+ // foreground flame silhouettes
+ ctx.fillStyle='#160300';
+ for(let i=0;i<24;i++){
+  let x=Math.floor(i*180-cam*.5),base=H*.88;
+  ctx.fillRect(x,base-40,95,40);
+  ctx.fillRect(x+18,base-70,50,30);
+  ctx.fillRect(x+32,base-92,22,22);
+ }
+ // pixel fire strips near the ground
+ ctx.fillStyle='#ff9d00';
+ for(let i=0;i<30;i++){
+  let x=i*120-cam*.45,y=H*.83;
+  ctx.fillRect(x,y,70,10);ctx.fillRect(x+15,y-12,35,12);
+ }
 }
 function platform(p){
  const x=p.x-cam;if(x+p.w<0||x>W)return;
@@ -261,6 +295,18 @@ function block(b){
 }
 function powerup(p){const x=Math.floor(p.x-cam),y=Math.floor(p.y);ctx.fillStyle={speed:'#ff8c00',shield:'#55ddff',jump:'#9966ff',coin:'#ffcc00',star:'#ff6699'}[p.type]||'#fff';ctx.fillRect(x,y,p.w,p.h);ctx.fillStyle='#000';ctx.fillRect(x+4,y+4,p.w-8,p.h-8);ctx.fillStyle='#fff';ctx.font='bold 16px Courier New';ctx.textAlign='center';ctx.fillText({speed:'S',shield:'O',jump:'J',coin:'C',star:'*'}[p.type]||'?',x+p.w/2,y+20);}
 function drawGoal(){const x=Math.floor(activeGoal.x-cam);ctx.fillStyle='#fff';ctx.font='bold 16px Courier New';ctx.textAlign='left';ctx.fillText('FINISH',x-8,activeGoal.y-16);ctx.fillStyle='#eeeeee';ctx.fillRect(x,activeGoal.y,8,105);ctx.fillStyle='#ff3355';ctx.fillRect(x+8,activeGoal.y,48,8);ctx.fillRect(x+8,activeGoal.y+8,40,8);ctx.fillRect(x+8,activeGoal.y+16,32,8);ctx.fillStyle='#ffcc00';ctx.fillRect(x-4,activeGoal.y-4,8,8);}
+function render(){
+ drawBG();
+ const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;ctx.save();ctx.translate(sx,sy);
+ for(const p of activePlatforms)platform(p);
+ for(const b of activeBlocks)block(b);
+ for(const o of coins)if(!o.got&&o.x-cam>-30&&o.x-cam<W+30)coin(o);
+ for(const e of activeEnemies)if(e.alive)enemy(e);
+ for(const p of powerups)powerup(p);
+ drawGoal();playerDraw();
+ for(const p of particles){ctx.globalAlpha=1;ctx.fillStyle=p.color;ctx.fillRect(Math.floor(p.x-cam),Math.floor(p.y),Math.ceil(p.s),Math.ceil(p.s))}
+ ctx.restore();
+}
 function loop(t){const dt=(t-last)/1000;last=t;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 </script>
 </body>
