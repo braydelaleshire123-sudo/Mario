@@ -222,8 +222,12 @@ canvas.addEventListener("pointerdown",jump);
 const startButton=document.getElementById("go");
 function startGame(e){if(e){e.preventDefault();e.stopPropagation()}restart()}
 startButton.addEventListener("click",startGame);
-startButton.addEventListener("pointerup",startGame);
-startButton.addEventListener("touchend",startGame,{passive:false});
+startButton.addEventListener("pointerdown",startGame,{passive:false});
+startButton.addEventListener("touchstart",startGame,{passive:false});
+startButton.addEventListener("mousedown",startGame,{passive:false});
+document.getElementById("screen").addEventListener("click",e=>{
+  if(e.target===startButton)startGame(e);
+});
 addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&!G.playing&&document.getElementById("screen").style.display!=="none"){e.preventDefault();restart()}});
 
 function holdButton(id,key){
