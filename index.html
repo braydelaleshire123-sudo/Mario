@@ -321,6 +321,8 @@ function playerDraw(){
  ctx.restore();
 }
 function render(){
+ ctx.globalAlpha=1;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
  drawBG();
  const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;ctx.save();ctx.translate(sx,sy);
  for(const p of activePlatforms)platform(p);
@@ -332,7 +334,13 @@ function render(){
  for(const p of particles){ctx.globalAlpha=1;ctx.fillStyle=p.color;ctx.fillRect(Math.floor(p.x-cam),Math.floor(p.y),Math.ceil(p.s),Math.ceil(p.s))}
  ctx.restore();
 }
-function loop(t){const dt=(t-last)/1000;last=t;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+function loop(t){
+ try{const dt=Math.min((t-last)/1000,.033);last=t;update(dt);render();}
+ catch(err){console.error('Pixel Quest error:',err);}
+ requestAnimationFrame(loop);
+}
+render();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
