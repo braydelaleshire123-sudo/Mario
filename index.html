@@ -83,10 +83,10 @@ scene.gravity=new BABYLON.Vector3(0,-.25,0);
 scene.collisionsEnabled=true;
 
 const hemi=new BABYLON.HemisphericLight("ambient",new BABYLON.Vector3(0,1,0),scene);
-hemi.intensity=.11;
+hemi.intensity=.24;
 hemi.diffuse=new BABYLON.Color3(.55,.7,.72);
 const moon=new BABYLON.DirectionalLight("moon",new BABYLON.Vector3(-.4,-1,.3),scene);
-moon.intensity=.16;
+moon.intensity=.28;
 moon.diffuse=new BABYLON.Color3(.55,.68,.72);
 
 const mats={};
@@ -241,13 +241,14 @@ function buildFacility(){
     box("stripe",new BABYLON.Vector3(8.3,.14,z),new BABYLON.Vector3(1.4,.025,.08),mats.yellow,false);
   }
   for(const r of rooms){
-    addLight("ceilingLight",new BABYLON.Vector3(r.x,3.6,r.z),poweredZones? "#d7f4f0":"#587175",poweredZones?1.2:.08,10);
+    addLight("ceilingLight",new BABYLON.Vector3(r.x,3.6,r.z),"#d7f4f0",.65,12);
+    glowBox("ceilingPanel",new BABYLON.Vector3(r.x,3.86,r.z),new BABYLON.Vector3(Math.min(6,r.w*.55),.04,.7),mats.cyan);
   }
 }
 buildFacility();
 
-const flash=new BABYLON.SpotLight("flashlight",camera.position,new BABYLON.Vector3(0,0,1),Math.PI/3,.75,scene);
-flash.intensity=2.7;flash.range=22;flash.diffuse=new BABYLON.Color3(.85,1,1);
+const flash=new BABYLON.SpotLight("flashlight",new BABYLON.Vector3(0,0,0),new BABYLON.Vector3(0,0,1),Math.PI/3,.75,scene);
+flash.intensity=4.2;flash.range=28;flash.diffuse=new BABYLON.Color3(.9,1,1);flash.specular=new BABYLON.Color3(.7,.9,.95);
 flash.parent=camera;
 
 const outside=box("outside",new BABYLON.Vector3(0,-2,40),new BABYLON.Vector3(80,.2,110),mats.dark,false);
@@ -328,6 +329,7 @@ function finishCheck(){
 document.getElementById("start").addEventListener("click",()=>{
   document.getElementById("screen").style.display="none";started=true;elapsed=0;poweredZones=0;hasCard=false;stamina=100;
   camera.position=new BABYLON.Vector3(0,1.7,-4.5);
+  camera.rotation=new BABYLON.Vector3(0,0,0);
   for(const p of panels){p.active=false;p.light.material=mats.redE}
   for(const t of terminals){t.used=false;t.screen.material=mats.cyan}
   accessCard.setEnabled(true);controlDoor.isVisible=true;controlDoor.checkCollisions=true;setObjective("Restore 3 electrical zones");
@@ -342,15 +344,15 @@ scene.onBeforeRenderObservable.add(()=>{
   const sprint=keys.shift&&moving&&stamina>1;
   if(sprint){camera.speed=.19;stamina=Math.max(0,stamina-dt*24)}else{camera.speed=.11;stamina=Math.min(100,stamina+dt*15)}
   camera.speed*=engine.getFps()<45?.72:1;
-  flash.position=camera.position;
-  flash.direction=camera.getForwardRay().direction;
+  flash.position.set(0,.05,.05);
+  flash.direction.set(0,0,1);
   for(let i=0;i<rain.length;i++){
     const r=rain[i];r.position.y-=dt*(9+(i%5));if(r.position.y<-1)r.position.y=30;
   }
   for(const s of screens)s.rotation.y=Math.sin(elapsed*.4)*.002;
   const darkness=1-poweredZones*.28;
-  hemi.intensity=.08+.05*poweredZones;
-  moon.intensity=.12+.02*poweredZones;
+  hemi.intensity=.16+.08*poweredZones;
+  moon.intensity=.18+.04*poweredZones;
   document.getElementById("power").textContent=Math.min(100,poweredZones*33)+"%";
   document.getElementById("battery").textContent=Math.max(0,Math.round(battery))+"%";
   document.getElementById("stamina").textContent=Math.round(stamina)+"%";
