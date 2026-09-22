@@ -1,30 +1,337 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BIG TOWER</title><style>
-*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#05070a;font-family:system-ui}canvas{display:block;width:100%;height:100%}#hud{position:fixed;inset:0;color:white;pointer-events:none;text-shadow:0 2px 8px #000}#top{padding:15px;font-weight:900;letter-spacing:3px}#stats{position:absolute;right:15px;top:15px;text-align:right;letter-spacing:1px}#help{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:#000b;padding:7px 12px;border-radius:8px;font-size:12px}.overlay{position:fixed;inset:0;display:grid;place-items:center;background:#000b;z-index:5}.box{width:min(560px,90vw);padding:32px;text-align:center;background:#0c131af5;border:1px solid #ffffff33;border-radius:18px}h1{font-size:52px;margin:0 0 8px;letter-spacing:6px}p{color:#aebac5;line-height:1.6}button{padding:13px 24px;background:#182832;color:#fff;border:1px solid #ffffff55;border-radius:9px;font-weight:900}.small{font-size:11px;letter-spacing:2px;opacity:.65}</style></head><body>
-<canvas id="c"></canvas><div id="hud"><div id="top">BIG TOWER</div><div id="stats">FLOOR <b id="floor">1</b><br>FLAPPYS <b id="f">0</b>/3</div><div id="help">A/D or ←/→ MOVE • SPACE/W/↑ JUMP • 3 FLAPPYS = 3 EXTRA JUMPS</div></div>
-<div class="overlay" id="menu"><div class="box"><div class="small">TINY SQUARE • MASSIVE TOWER • RESCUE MISSION</div><h1 id="heading">BIG TOWER</h1><p id="desc">Climb the tower one platform at a time. Find three Flappys for extra jumps, dodge traps, and rescue Pineapple at the top.</p><button id="go">START</button></div></div>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TINY TOWER</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080a0d;font-family:Arial,sans-serif}
+canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;inset:0;color:#fff;pointer-events:none;text-shadow:0 2px 6px #000}
+#name{position:absolute;top:14px;left:16px;font-weight:900;letter-spacing:3px}
+#info{position:absolute;top:14px;right:16px;text-align:right;font-size:13px}
+#help{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);padding:7px 12px;background:#000b;border-radius:7px;font-size:12px;white-space:nowrap}
+#screen{position:fixed;inset:0;display:grid;place-items:center;background:#000b;z-index:4}
+.card{width:min(560px,92vw);padding:32px;text-align:center;background:#10161cf5;border:1px solid #ffffff35;border-radius:16px;box-shadow:0 25px 80px #000}
+h1{margin:0 0 8px;font-size:clamp(38px,8vw,64px);letter-spacing:5px}
+p{color:#aeb8c0;line-height:1.55}
+button{padding:13px 28px;border:1px solid #ffffff55;border-radius:9px;background:#1c303b;color:#fff;font-weight:900;cursor:pointer}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+<div id="name">TINY TOWER</div>
+<div id="info">FLOOR <b id="floor">1</b><br>FLAPPYS <b id="flappy">0</b>/3</div>
+<div id="help">← → / A D = MOVE &nbsp; • &nbsp; SPACE / W / ↑ = JUMP</div>
+</div>
+<div id="screen">
+<div class="card">
+<h1 id="title">TINY TOWER</h1>
+<p id="text">Climb a giant tower, collect the 3 Flappys for extra jumps, avoid traps, and rescue Pineapple at the top.</p>
+<button id="button">START GAME</button>
+</div>
+</div>
+
 <script>
-const c=document.getElementById('c'),g=c.getContext('2d');let W,H,D;function resize(){W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,2);c.width=W*D;c.height=H*D;g.setTransform(D,0,0,D,0,0)}addEventListener('resize',resize);resize();
-const R=(a,b)=>a+Math.random()*(b-a),C=(v,a,b)=>Math.max(a,Math.min(b,v));let keys={},playing=false,t=0,cam=0,topY=6000,p,platforms=[],traps=[],items=[],dust=[];
-addEventListener('keydown',e=>{let k=e.key.toLowerCase();keys[k]=1;if([' ','arrowup','w'].includes(k))e.preventDefault()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
-function build(){platforms=[];traps=[];items=[];dust=[];let y=0;platforms.push({x:0,y,w:W,h:24});for(let i=1;i<=60;i++){y=i*100;let w=R(150,300),x=R(30,Math.max(31,W-w-30));platforms.push({x,y,w,h:18});if(i%3===0)traps.push({type:'laser',x:x+R(10,w-60),y:y-55,w:R(55,110),phase:R(0,6.28)});if(i%5===0)traps.push({type:'saw',x:x+w/2,y:y-35,r:14,phase:R(0,6.28)});if(i===9||i===25||i===43)items.push({x:x+w/2,y:y-28,type:'flappy'});}items.push({x:W/2,y:topY-55,type:'pineapple'});p={x:W/2-7,y:0,w:14,h:14,vx:0,vy:0,on:false,extra:0};}
-build();
-function start(){build();playing=true;cam=0;t=0;document.getElementById('menu').style.display='none';document.getElementById('heading').textContent='BIG TOWER';document.getElementById('go').textContent='START'}
-function jump(){if(!playing)return;if(p.on){p.vy=-11;p.on=false;return}if(p.extra>0){p.vy=-11;p.extra--;}}
-addEventListener('keydown',e=>{if(!e.repeat&&[' ','arrowup','w'].includes(e.key.toLowerCase()))jump()});c.addEventListener('pointerdown',jump);document.getElementById('go').onclick=start;
-function die(){playing=false;document.getElementById('heading').textContent='TRY AGAIN';document.getElementById('desc').textContent='You hit a trap or fell. Start again and climb the tower platform by platform.';document.getElementById('go').textContent='RETRY';document.getElementById('menu').style.display='grid'}
-function win(){playing=false;document.getElementById('heading').textContent='PINEAPPLE RESCUED!';document.getElementById('desc').textContent='You made it to the top of the tower and rescued your friend.';document.getElementById('go').textContent='PLAY AGAIN';document.getElementById('menu').style.display='grid'}
-function update(dt){if(!playing)return;t+=dt;let l=keys.a||keys.arrowleft,r=keys.d||keys.arrowright;p.vx+=(r-l)*.7;p.vx*=.82;p.vx=C(p.vx,-6,6);let old=p.y;p.vy+=.52;p.x+=p.vx;p.y+=p.vy;p.x=C(p.x,4,W-p.w-4);p.on=false;
-for(let q of platforms)if(p.x+p.w>q.x&&p.x<q.x+q.w&&old+p.h<=q.y&&p.y+p.h>=q.y&&p.vy>=0){p.y=q.y-p.h;p.vy=0;p.on=true}
-for(let h of traps){if(h.type==='laser'){let on=Math.sin(t*3+h.phase)>.05;if(on&&p.x+p.w>h.x&&p.x<h.x+h.w&&p.y+p.h>h.y&&p.y<h.y+7)die()}else{let sy=h.y+Math.sin(t*2+h.phase)*10;if(Math.hypot(p.x+7-h.x,p.y+7-sy)<h.r+7)die()}}
-for(let q of items)if(!q.got&&Math.hypot(p.x+7-q.x,p.y+7-q.y)<22){q.got=true;if(q.type==='flappy'){p.extra=Math.min(3,p.extra+1);document.getElementById('f').textContent=3-p.extra+Math.max(0,0);p.extra=Math.min(3,p.extra);document.getElementById('f').textContent=items.filter(z=>z.type==='flappy'&&z.got).length}else win()}
-if(p.y>topY+200)die();if(p.y-cam<H*.42)cam=p.y-H*.42;document.getElementById('floor').textContent=Math.max(1,Math.floor(p.y/100)+1);for(let z of dust){z.x+=z.vx;z.y+=z.vy;z.life-=dt}dust=dust.filter(z=>z.life>0)}
-function tower(){let bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#111a21');bg.addColorStop(1,'#020305');g.fillStyle=bg;g.fillRect(0,0,W,H);let L=W*.07,Q=W*.93;g.fillStyle='#10191f';g.fillRect(L,0,Q-L,H);g.fillStyle='#061017';g.fillRect(W*.23,0,W*.54,H);
-for(let y=-cam%55;y<H+55;y+=55){g.strokeStyle='#27404a';g.lineWidth=2;g.beginPath();g.moveTo(L,y);g.lineTo(Q,y);g.stroke()}g.fillStyle='#0b1115';g.fillRect(L+22,0,16,H);g.fillRect(Q-38,0,16,H);g.fillRect(W*.23-7,0,14,H);g.fillRect(W*.77-7,0,14,H);
-for(let y=-cam%31;y<H+31;y+=31)for(let xx=W*.1;xx<W*.9;xx+=25){let lit=Math.sin(xx*1.8+y*2.7+t)>.85;g.globalAlpha=lit?.7:.5;g.fillStyle=lit?'#b6d9d5':'#18303a';g.fillRect(xx,y,14,17)}g.globalAlpha=1;
-g.strokeStyle='#40535b';g.lineWidth=7;for(let y=-cam%200-200;y<H+250;y+=200){g.beginPath();g.moveTo(L,y);g.lineTo(W*.23,y+100);g.lineTo(L,y+200);g.stroke();g.beginPath();g.moveTo(Q,y);g.lineTo(W*.77,y+100);g.lineTo(Q,y+200);g.stroke()}}
-function draw(){tower();for(let q of platforms){let y=q.y-cam;if(y<-30||y>H+30)continue;g.fillStyle='#3a474d';g.fillRect(q.x,y,q.w,q.h);g.fillStyle='#89949a';g.fillRect(q.x,y,q.w,3);g.fillStyle='#11181c';g.fillRect(q.x+8,y+q.h,q.w-16,6)}
-for(let h of traps){let y=h.y-cam;if(h.type==='laser'){let on=Math.sin(t*3+h.phase)>.05;g.globalAlpha=on?.95:.12;g.fillStyle='#ff3048';g.shadowColor='#ff3048';g.shadowBlur=on?18:2;g.fillRect(h.x,y,h.w,7);g.shadowBlur=0;g.globalAlpha=1}else{let sy=y+Math.sin(t*2+h.phase)*10;g.save();g.translate(h.x,sy);g.rotate(t*4);g.fillStyle='#252b2f';g.strokeStyle='#d0d5d7';g.beginPath();for(let i=0;i<16;i++){let a=i*Math.PI/8,r=i%2?h.r:h.r*.6;g.lineTo(Math.cos(a)*r,Math.sin(a)*r)}g.closePath();g.fill();g.stroke();g.restore()}}
-for(let q of items)if(!q.got){let y=q.y-cam;g.save();g.translate(q.x,y);g.shadowColor='#7ff4ff';g.shadowBlur=18;g.fillStyle='#bffcff';g.beginPath();g.arc(0,0,10,0,7);g.fill();g.shadowBlur=0;g.fillStyle='#17323b';g.font='bold 10px system-ui';g.textAlign='center';g.fillText(q.type==='flappy'?'F':'P',0,4);g.restore()}
-g.save();g.translate(p.x+7,p.y-cam+7);g.shadowColor='#76eaff';g.shadowBlur=18;let pg=g.createLinearGradient(-7,-7,7,7);pg.addColorStop(0,'#fff');pg.addColorStop(.4,'#73eaff');pg.addColorStop(1,'#19719f');g.fillStyle=pg;g.fillRect(-7,-7,14,14);g.shadowBlur=0;g.fillStyle='#06151c';g.fillRect(-2,-2,4,4);g.restore()}
-let last=0;function loop(n){let dt=Math.min(.032,(n-last)/1000||0);last=n;update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-</script></body></html>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+let W=innerWidth,H=innerHeight,dpr=1;
+function resize(){
+  W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+addEventListener("resize",resize);resize();
+
+const state={playing:false,time:0,camera:0,worldHeight:7000,keys:{}};
+let player,platforms,flappys,traps,pineapple;
+
+function makeWorld(){
+  platforms=[];
+  flappys=[];
+  traps=[];
+  let y=0;
+
+  // Safe starting platform.
+  platforms.push({x:0,y:0,w:W,h:28});
+
+  // A fixed, climbable route: every platform is reachable from the previous one.
+  for(let i=1;i<=70;i++){
+    y=i*100;
+    const width=Math.min(260,Math.max(155,W*.38));
+    const maxX=Math.max(20,W-width-20);
+    const x=20+((i*137)%Math.max(1,Math.floor(maxX-19)));
+    platforms.push({x,y,w:width,h:18});
+
+    // Simple hazards near some platforms.
+    if(i%4===0) traps.push({type:"laser",x:x+35,y:y-52,w:Math.min(110,width-50),h:7,phase:i});
+    if(i%7===0) traps.push({type:"saw",x:x+width/2,y:y-34,r:15,phase:i});
+    
+    // Three Flappys are placed on the route.
+    if(i===12||i===32||i===52) flappys.push({x:x+width/2,y:y-30,collected:false});
+  }
+
+  pineapple={x:W/2,y:6900,collected:false};
+
+  player={
+    x:W/2-7,y:0,w:14,h:14,
+    vx:0,vy:0,onGround:true,extraJumps:0
+  };
+}
+
+makeWorld();
+
+function reset(){
+  makeWorld();
+  state.playing=true;
+  state.time=0;
+  state.camera=0;
+  document.getElementById("screen").style.display="none";
+  document.getElementById("title").textContent="TINY TOWER";
+  document.getElementById("button").textContent="START GAME";
+}
+
+function jump(){
+  if(!state.playing)return;
+  if(player.onGround){
+    player.vy=-11;
+    player.onGround=false;
+  }else if(player.extraJumps>0){
+    player.vy=-11;
+    player.extraJumps--;
+  }
+}
+
+addEventListener("keydown",e=>{
+  const k=e.key.toLowerCase();
+  state.keys[k]=true;
+  if([" ","arrowup","w"].includes(k)){
+    e.preventDefault();
+    if(!e.repeat)jump();
+  }
+});
+addEventListener("keyup",e=>state.keys[e.key.toLowerCase()]=false);
+canvas.addEventListener("pointerdown",jump);
+
+document.getElementById("button").onclick=reset;
+
+function lose(){
+  state.playing=false;
+  document.getElementById("title").textContent="TRY AGAIN";
+  document.getElementById("text").textContent="You fell or hit a trap. The tower has a real platform path now — climb it one floor at a time.";
+  document.getElementById("button").textContent="RETRY";
+  document.getElementById("screen").style.display="grid";
+}
+
+function win(){
+  state.playing=false;
+  document.getElementById("title").textContent="PINEAPPLE RESCUED!";
+  document.getElementById("text").textContent="You reached the top of the tower and rescued Pineapple.";
+  document.getElementById("button").textContent="PLAY AGAIN";
+  document.getElementById("screen").style.display="grid";
+}
+
+function update(){
+  if(!state.playing)return;
+  state.time+=1/60;
+
+  const left=state.keys["a"]||state.keys["arrowleft"];
+  const right=state.keys["d"]||state.keys["arrowright"];
+
+  player.vx+=(right-left)*0.75;
+  player.vx*=0.82;
+  player.vx=Math.max(-6,Math.min(6,player.vx));
+
+  const oldBottom=player.y+player.h;
+  player.vy+=0.52;
+  player.x+=player.vx;
+  player.y+=player.vy;
+
+  player.x=Math.max(0,Math.min(W-player.w,player.x));
+  player.onGround=false;
+
+  // Land on platforms only while falling.
+  if(player.vy>=0){
+    for(const p of platforms){
+      if(player.x+player.w>p.x &&
+         player.x<p.x+p.w &&
+         oldBottom<=p.y &&
+         player.y+player.h>=p.y){
+        player.y=p.y-player.h;
+        player.vy=0;
+        player.onGround=true;
+        break;
+      }
+    }
+  }
+
+  // Moving laser traps.
+  for(const trap of traps){
+    if(trap.type==="laser"){
+      const active=Math.sin(state.time*3+trap.phase)>0;
+      if(active &&
+         player.x+player.w>trap.x &&
+         player.x<trap.x+trap.w &&
+         player.y+player.h>trap.y &&
+         player.y<trap.y+trap.h){
+        lose();return;
+      }
+    }else{
+      const sy=trap.y+Math.sin(state.time*2+trap.phase)*10;
+      const dx=player.x+7-trap.x;
+      const dy=player.y+7-sy;
+      if(Math.hypot(dx,dy)<trap.r+7){lose();return;}
+    }
+  }
+
+  // Collect Flappys.
+  for(const f of flappys){
+    if(!f.collected && Math.hypot(player.x+7-f.x,player.y+7-f.y)<24){
+      f.collected=true;
+      player.extraJumps=Math.min(3,player.extraJumps+1);
+    }
+  }
+
+  // Rescue Pineapple at the top.
+  if(!pineapple.collected &&
+     Math.hypot(player.x+7-pineapple.x,player.y+7-pineapple.y)<28){
+    pineapple.collected=true;
+    win();return;
+  }
+
+  if(player.y>state.worldHeight+250){lose();return;}
+
+  // Camera follows the square upward.
+  const target=H*0.48;
+  if(player.y-state.camera<target)state.camera=Math.max(0,player.y-target);
+
+  document.getElementById("floor").textContent=Math.max(1,Math.floor(player.y/100)+1);
+  document.getElementById("flappy").textContent=flappys.filter(f=>f.collected).length;
+}
+
+function drawBackground(){
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,"#111922");
+  bg.addColorStop(1,"#020305");
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  // Giant tower walls.
+  const L=W*.06,R=W*.94;
+  ctx.fillStyle="#10191f";ctx.fillRect(L,0,R-L,H);
+  ctx.fillStyle="#071118";ctx.fillRect(W*.22,0,W*.56,H);
+
+  // Structural columns.
+  ctx.fillStyle="#05090c";
+  ctx.fillRect(L+20,0,20,H);
+  ctx.fillRect(R-40,0,20,H);
+  ctx.fillRect(W*.22-7,0,14,H);
+  ctx.fillRect(W*.78-7,0,14,H);
+
+  // Repeating windows.
+  for(let y=-((state.camera)%34);y<H+34;y+=34){
+    for(let x=W*.1;x<W*.9;x+=27){
+      const lit=Math.sin(x*1.7+y*2.3+state.time)>.8;
+      ctx.fillStyle=lit?"#a8d0cc":"#17303a";
+      ctx.globalAlpha=lit?.7:.55;
+      ctx.fillRect(x,y,15,18);
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // Large braces make the tower read as one huge structure.
+  ctx.strokeStyle="#3a4d55";
+  ctx.lineWidth=7;
+  for(let y=-((state.camera)%210)-210;y<H+250;y+=210){
+    ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W*.22,y+105);ctx.lineTo(L,y+210);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(R,y);ctx.lineTo(W*.78,y+105);ctx.lineTo(R,y+210);ctx.stroke();
+  }
+}
+
+function draw(){
+  drawBackground();
+
+  // Platforms.
+  for(const p of platforms){
+    const y=p.y-state.camera;
+    if(y<-30||y>H+30)continue;
+    ctx.fillStyle="#3d4a50";ctx.fillRect(p.x,y,p.w,p.h);
+    ctx.fillStyle="#9aa5aa";ctx.fillRect(p.x,y,p.w,3);
+    ctx.fillStyle="#11171b";ctx.fillRect(p.x+8,y+p.h,p.w-16,6);
+  }
+
+  // Traps.
+  for(const trap of traps){
+    if(trap.type==="laser"){
+      const y=trap.y-state.camera;
+      const active=Math.sin(state.time*3+trap.phase)>0;
+      ctx.globalAlpha=active?.95:.14;
+      ctx.fillStyle="#ff3048";
+      ctx.shadowColor="#ff3048";
+      ctx.shadowBlur=active?20:3;
+      ctx.fillRect(trap.x,y,trap.w,trap.h);
+      ctx.shadowBlur=0;ctx.globalAlpha=1;
+    }else{
+      const y=trap.y-state.camera+Math.sin(state.time*2+trap.phase)*10;
+      ctx.save();ctx.translate(trap.x,y);ctx.rotate(state.time*4);
+      ctx.fillStyle="#242b30";ctx.strokeStyle="#d8dcde";
+      ctx.beginPath();
+      for(let i=0;i<16;i++){
+        const a=i*Math.PI/8;
+        const r=i%2?trap.r:trap.r*.58;
+        ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+      }
+      ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+    }
+  }
+
+  // Flappys.
+  for(const f of flappys){
+    if(f.collected)continue;
+    const y=f.y-state.camera;
+    ctx.save();ctx.translate(f.x,y);
+    ctx.shadowColor="#6feaff";ctx.shadowBlur=18;
+    ctx.fillStyle="#bdfcff";
+    ctx.beginPath();ctx.arc(0,0,10,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;ctx.fillStyle="#12323a";
+    ctx.font="bold 10px Arial";ctx.textAlign="center";ctx.fillText("F",0,4);
+    ctx.restore();
+  }
+
+  // Pineapple target.
+  if(!pineapple.collected){
+    const y=pineapple.y-state.camera;
+    ctx.save();ctx.translate(pineapple.x,y);
+    ctx.shadowColor="#ffd84a";ctx.shadowBlur=22;
+    ctx.fillStyle="#f3bd2f";
+    ctx.beginPath();ctx.ellipse(0,4,11,15,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#4f9b45";
+    ctx.beginPath();ctx.moveTo(-7,-7);ctx.lineTo(-3,-18);ctx.lineTo(0,-9);ctx.lineTo(5,-19);ctx.lineTo(7,-7);ctx.fill();
+    ctx.shadowBlur=0;ctx.restore();
+  }
+
+  // Tiny square.
+  const py=player.y-state.camera;
+  ctx.save();
+  ctx.translate(player.x+7,py+7);
+  ctx.shadowColor="#73eaff";ctx.shadowBlur=18;
+  const grad=ctx.createLinearGradient(-7,-7,7,7);
+  grad.addColorStop(0,"#ffffff");
+  grad.addColorStop(.45,"#72eaff");
+  grad.addColorStop(1,"#1b70a0");
+  ctx.fillStyle=grad;ctx.fillRect(-7,-7,14,14);
+  ctx.shadowBlur=0;ctx.fillStyle="#06151c";ctx.fillRect(-2,-2,4,4);
+  ctx.restore();
+}
+
+let last=0;
+function loop(now){
+  if(now-last>100)last=now;
+  update();
+  draw();
+  last=now;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
