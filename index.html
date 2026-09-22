@@ -1,121 +1,30 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BIG TOWER // RESCUE</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#05070b;font-family:system-ui,-apple-system,sans-serif}
-canvas{display:block;width:100%;height:100%}#hud{position:fixed;inset:0;pointer-events:none;color:#fff}
-#title{position:absolute;top:14px;left:18px;font-weight:900;letter-spacing:3px;text-shadow:0 2px 8px #000}
-#stats{position:absolute;top:14px;right:18px;text-align:right;font-size:13px;text-shadow:0 2px 8px #000}
-#msg{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);padding:8px 14px;border:1px solid #ffffff33;background:#05080dcc;border-radius:8px;font-size:12px;opacity:.8}
-#menu{position:fixed;inset:0;display:grid;place-items:center;background:#02050bd9}
-.card{width:min(620px,92vw);padding:34px;border:1px solid #ffffff2d;background:#091019f2;border-radius:18px;box-shadow:0 30px 100px #000;text-align:center}
-h1{font-size:clamp(32px,7vw,68px);margin:0 0 6px;letter-spacing:6px}p{color:#aebbc7;line-height:1.6}
-button{padding:13px 25px;border:1px solid #ffffff44;border-radius:10px;background:#172532;color:white;font-weight:900;cursor:pointer}
-.small{font-size:11px;letter-spacing:2px;opacity:.65}
-</style></head>
-<body>
-<canvas id="c"></canvas>
-<div id="hud"><div id="title">BIG TOWER</div><div id="stats">HEIGHT <b id="height">0</b>m<br>FLAPPYS <b id="flappys">0</b>/3</div><div id="msg">WASD / ARROWS TO MOVE • SPACE TO JUMP</div></div>
-<div id="menu"><div class="card"><div class="small">A TINY SQUARE • A HUGE TOWER • ONE RESCUE</div><h1>BIG TOWER</h1><p>Climb the tower, find all three Flappys to unlock extra jumps, dodge traps, and reach the top to rescue your friend Pineapple.</p><button id="start">START RESCUE</button><p class="small">Move with A/D or ←/→ • Jump with SPACE / W / ↑</p></div></div>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BIG TOWER</title><style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#05070a;font-family:system-ui}canvas{display:block;width:100%;height:100%}#hud{position:fixed;inset:0;color:white;pointer-events:none;text-shadow:0 2px 8px #000}#top{padding:15px;font-weight:900;letter-spacing:3px}#stats{position:absolute;right:15px;top:15px;text-align:right;letter-spacing:1px}#help{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:#000b;padding:7px 12px;border-radius:8px;font-size:12px}.overlay{position:fixed;inset:0;display:grid;place-items:center;background:#000b;z-index:5}.box{width:min(560px,90vw);padding:32px;text-align:center;background:#0c131af5;border:1px solid #ffffff33;border-radius:18px}h1{font-size:52px;margin:0 0 8px;letter-spacing:6px}p{color:#aebac5;line-height:1.6}button{padding:13px 24px;background:#182832;color:#fff;border:1px solid #ffffff55;border-radius:9px;font-weight:900}.small{font-size:11px;letter-spacing:2px;opacity:.65}</style></head><body>
+<canvas id="c"></canvas><div id="hud"><div id="top">BIG TOWER</div><div id="stats">FLOOR <b id="floor">1</b><br>FLAPPYS <b id="f">0</b>/3</div><div id="help">A/D or ←/→ MOVE • SPACE/W/↑ JUMP • 3 FLAPPYS = 3 EXTRA JUMPS</div></div>
+<div class="overlay" id="menu"><div class="box"><div class="small">TINY SQUARE • MASSIVE TOWER • RESCUE MISSION</div><h1 id="heading">BIG TOWER</h1><p id="desc">Climb the tower one platform at a time. Find three Flappys for extra jumps, dodge traps, and rescue Pineapple at the top.</p><button id="go">START</button></div></div>
 <script>
-const c=document.getElementById('c'),x=c.getContext('2d');let W,H,D;
-function size(){W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,2);c.width=W*D;c.height=H*D;x.setTransform(D,0,0,D,0,0)}addEventListener('resize',size);size();
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rand=(a,b)=>a+Math.random()*(b-a);
-let game=false,won=false,t=0,cam=0,keys={},levelTop=5200;
-addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1;if([' ','arrowup','w'].includes(e.key.toLowerCase()))e.preventDefault()});
-addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
-let p,plats=[],hazards=[],pickups=[],parts=[],stars=[],buildings=[];
-function makeLevel(){
- plats=[];hazards=[];pickups=[];parts=[];stars=[];
- for(let i=0;i<190;i++)stars.push({x:rand(0,1),y:rand(0,1),s:rand(.5,2),a:rand(.15,.7)});
- for(let i=0;i<24;i++)buildings.push({x:rand(-.3,1.1),w:rand(.08,.25),h:rand(.15,.55)});
- // Giant tower floors and ledges
- plats.push({x:0,y:0,w:W*2,h:70});
- for(let i=1;i<52;i++){
-   let y=i*100;
-   let w=rand(180,330), px=rand(40,W-w-40);
-   plats.push({x:px,y,w,h:18});
-   if(i%3===0) hazards.push({type:'laser',x:px+rand(20,Math.max(25,w-50)),y:y+30,w:rand(45,100),h:7,phase:rand(0,6)});
-   if(i%4===0) hazards.push({type:'saw',x:px+w/2,y:y+42,r:14,phase:rand(0,6)});
-   if(i===8||i===23||i===39) pickups.push({x:px+w/2,y:y+38,n:pickups.length});
- }
- pickups.push({x:W/2,y:levelTop-100,n:99,pineapple:true});
- p={x:W/2,y:75,w:13,h:13,vx:0,vy:0,jumps:0,flappys:0,on:false};
-}
-makeLevel();
-function jump(){if(!game)return;if(p.on||p.jumps<p.flappys){p.vy=-10.5;p.on=false;if(!p.on)p.jumps++;for(let i=0;i<8;i++)parts.push({x:p.x,y:p.y+8,vx:rand(-2,2),vy:rand(1,3),life:1})}}
-addEventListener('keydown',e=>{if([' ','arrowup','w'].includes(e.key.toLowerCase())&&!e.repeat)jump()});
-c.addEventListener('pointerdown',()=>jump());
-function reset(){makeLevel();cam=0;t=0;game=true;won=false;document.getElementById('menu').style.display='none'}
-document.getElementById('start').onclick=reset;
-function collide(a,b){return a.x<a.x+a.w&&a.x+a.w>b.x&&a.y<a.y+a.h&&a.y+a.h>b.y}
-function update(dt){
- if(!game)return;t+=dt;
- let left=keys['a']||keys['arrowleft'],right=keys['d']||keys['arrowright'];
- p.vx+=(right-left)*.65;p.vx*=.84;p.vx=clamp(p.vx,-6,6);p.vy+=.5;
- let oldY=p.y;p.x+=p.vx;p.y+=p.vy;
- p.x=clamp(p.x,12,W-25);p.on=false;
- for(const q of plats){
-   if(p.x+p.w>q.x&&p.x<q.x+q.w&&oldY+p.h<=q.y&&p.y+p.h>=q.y&&p.vy>=0){p.y=q.y-p.h;p.vy=0;p.on=true;p.jumps=0}
- }
- for(const h of hazards){
-   if(h.type==='laser'){
-     let yy=h.y, pulse=Math.sin(t*3+h.phase)>-.1;
-     if(pulse&&p.x+p.w>h.x&&p.x<h.x+h.w&&p.y+p.h>yy&&p.y<yy+h.h) return fail();
-   }else{
-     let sy=h.y+Math.sin(t*2+h.phase)*9,dx=p.x+p.w/2-h.x,dy=p.y+p.h/2-sy;
-     if(Math.hypot(dx,dy)<h.r+8)return fail();
-   }
- }
- for(const q of pickups){
-   if(q.got)continue;
-   let dx=p.x+p.w/2-q.x,dy=p.y+p.h/2-q.y;
-   if(Math.hypot(dx,dy)<24){
-     q.got=true;
-     if(q.pineapple){won=true;game=false;showWin();return}
-     p.flappys=Math.min(3,p.flappys+1);
-     for(let i=0;i<20;i++)parts.push({x:q.x,y:q.y,vx:rand(-3,3),vy:rand(-4,1),life:1})
-   }
- }
- if(p.y>levelTop+100)return fail();
- let target=H*.45;if(p.y-cam<target)cam=p.y-target;
- document.getElementById('height').textContent=Math.floor(p.y/5);
- document.getElementById('flappys').textContent=p.flappys;
- for(const z of parts){z.x+=z.vx;z.y+=z.vy;z.vy+=.08;z.life-=dt*1.8}parts=parts.filter(z=>z.life>0);
-}
-function fail(){game=false;document.getElementById('menu').style.display='grid';document.querySelector('#menu h1').textContent='TRY AGAIN';document.querySelector('#menu p').textContent='The tower got you. Keep climbing, collect the Flappys, and reach Pineapple at the top.'}
-function showWin(){document.getElementById('menu').style.display='grid';document.querySelector('#menu h1').textContent='PINEAPPLE SAVED!';document.querySelector('#menu p').textContent='You reached the top of the tower and rescued your friend.'}
-function drawTower(){
- let g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#111820');g.addColorStop(.5,'#070c12');g.addColorStop(1,'#020306');x.fillStyle=g;x.fillRect(0,0,W,H);
- for(const s of stars){x.globalAlpha=s.a;x.fillStyle='#d8e8ff';x.fillRect(s.x*W,(s.y*H+cam*.08)%H,s.s,s.s)}x.globalAlpha=1;
- // distant city
- for(const b of buildings){let bx=b.x*W,by=H*.75-b.h*H*.4; x.fillStyle='#0a1016';x.fillRect(bx,by,b.w*W,H-by)}
- // huge tower shell
- let left=W*.09,right=W*.91; x.fillStyle='#111a21';x.fillRect(left,0,right-left,H);
- let metal=x.createLinearGradient(left,0,right,0);metal.addColorStop(0,'#29343b');metal.addColorStop(.12,'#0d151b');metal.addColorStop(.5,'#202b32');metal.addColorStop(.88,'#0d151b');metal.addColorStop(1,'#303a40');x.fillStyle=metal;x.fillRect(left,0,right-left,H);
- // glass core
- x.fillStyle='#06131c';x.fillRect(W*.25,0,W*.5,H);
- for(let yy=-((cam*.55)%58);yy<H+60;yy+=58){x.strokeStyle='#294653';x.lineWidth=2;x.beginPath();x.moveTo(left,yy);x.lineTo(right,yy);x.stroke()}
- // vertical mega columns
- x.fillStyle='#05090d';x.fillRect(left+25,0,18,H);x.fillRect(right-43,0,18,H);x.fillRect(W*.25-8,0,16,H);x.fillRect(W*.75-8,0,16,H);
- // windows
- for(let yy=-((cam*.85)%30);yy<H+30;yy+=30)for(let xx=W*.12;xx<W*.88;xx+=26){
-   let lit=Math.sin(xx*2.1+yy*3.7+t*.7)>0.72;x.fillStyle=lit?'#9bc8c5':'#122630';x.globalAlpha=lit?.65:.7;x.fillRect(xx,yy,15,17)
- }x.globalAlpha=1;
- // giant diagonal braces
- x.strokeStyle='#33464f';x.lineWidth=8;
- for(let yy=-((cam)%220)-220;yy<H+300;yy+=220){x.beginPath();x.moveTo(left,yy);x.lineTo(W*.25,yy+110);x.lineTo(left,yy+220);x.stroke();x.beginPath();x.moveTo(right,yy);x.lineTo(W*.75,yy+110);x.lineTo(right,yy+220);x.stroke()}
-}
-function draw(){
- drawTower();
- for(const q of plats){let yy=q.y-cam;if(yy<-30||yy>H+30)continue;x.fillStyle='#34434a';x.fillRect(q.x,yy,q.w,q.h);x.fillStyle='#738087';x.fillRect(q.x,yy,q.w,3);x.fillStyle='#11181d';x.fillRect(q.x+8,yy+q.h,q.w-16,6)}
- for(const h of hazards){let yy=h.y-cam;if(h.type==='laser'){let pulse=Math.sin(t*3+h.phase)>-.1;x.globalAlpha=pulse?.9:.15;x.fillStyle='#ff304d';x.shadowColor='#ff304d';x.shadowBlur=pulse?20:4;x.fillRect(h.x,yy,h.w,h.h);x.shadowBlur=0;x.globalAlpha=1}else{let sy=yy+Math.sin(t*2+h.phase)*9;x.save();x.translate(h.x,sy);x.rotate(t*4);x.fillStyle='#252c31';x.beginPath();for(let i=0;i<16;i++){let a=i*Math.PI/8,r=i%2?h.r:h.r*.65;x.lineTo(Math.cos(a)*r,Math.sin(a)*r)}x.closePath();x.fill();x.strokeStyle='#a7b1b4';x.stroke();x.restore()}}
- for(const q of pickups){if(q.got)continue;let yy=q.y-cam;x.save();x.translate(q.x,yy);x.shadowColor='#8ff5ff';x.shadowBlur=18;x.fillStyle='#bafaff';x.beginPath();x.arc(0,0,10,0,Math.PI*2);x.fill();x.shadowBlur=0;x.fillStyle='#17333c';x.font='bold 11px system-ui';x.textAlign='center';x.fillText(q.pineapple?'P':'F',0,4);x.restore()}
- for(const z of parts){x.globalAlpha=z.life;x.fillStyle='#9df6ff';x.fillRect(z.x,z.y-cam,4,4)}x.globalAlpha=1;
- // player
- x.save();x.translate(p.x+p.w/2,p.y-cam+p.h/2);x.rotate(p.vx*.04);x.shadowColor='#fff';x.shadowBlur=18;let pg=x.createLinearGradient(-7,-7,7,7);pg.addColorStop(0,'#fff');pg.addColorStop(.4,'#75eaff');pg.addColorStop(1,'#1972a2');x.fillStyle=pg;x.fillRect(-7,-7,14,14);x.shadowBlur=0;x.fillStyle='#07131a';x.fillRect(-2,-2,4,4);x.restore();
-}
-let last=0;function loop(now){let dt=Math.min(.032,(now-last)/1000||0);last=now;update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+const c=document.getElementById('c'),g=c.getContext('2d');let W,H,D;function resize(){W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,2);c.width=W*D;c.height=H*D;g.setTransform(D,0,0,D,0,0)}addEventListener('resize',resize);resize();
+const R=(a,b)=>a+Math.random()*(b-a),C=(v,a,b)=>Math.max(a,Math.min(b,v));let keys={},playing=false,t=0,cam=0,topY=6000,p,platforms=[],traps=[],items=[],dust=[];
+addEventListener('keydown',e=>{let k=e.key.toLowerCase();keys[k]=1;if([' ','arrowup','w'].includes(k))e.preventDefault()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
+function build(){platforms=[];traps=[];items=[];dust=[];let y=0;platforms.push({x:0,y,w:W,h:24});for(let i=1;i<=60;i++){y=i*100;let w=R(150,300),x=R(30,Math.max(31,W-w-30));platforms.push({x,y,w,h:18});if(i%3===0)traps.push({type:'laser',x:x+R(10,w-60),y:y-55,w:R(55,110),phase:R(0,6.28)});if(i%5===0)traps.push({type:'saw',x:x+w/2,y:y-35,r:14,phase:R(0,6.28)});if(i===9||i===25||i===43)items.push({x:x+w/2,y:y-28,type:'flappy'});}items.push({x:W/2,y:topY-55,type:'pineapple'});p={x:W/2-7,y:0,w:14,h:14,vx:0,vy:0,on:false,extra:0};}
+build();
+function start(){build();playing=true;cam=0;t=0;document.getElementById('menu').style.display='none';document.getElementById('heading').textContent='BIG TOWER';document.getElementById('go').textContent='START'}
+function jump(){if(!playing)return;if(p.on){p.vy=-11;p.on=false;return}if(p.extra>0){p.vy=-11;p.extra--;}}
+addEventListener('keydown',e=>{if(!e.repeat&&[' ','arrowup','w'].includes(e.key.toLowerCase()))jump()});c.addEventListener('pointerdown',jump);document.getElementById('go').onclick=start;
+function die(){playing=false;document.getElementById('heading').textContent='TRY AGAIN';document.getElementById('desc').textContent='You hit a trap or fell. Start again and climb the tower platform by platform.';document.getElementById('go').textContent='RETRY';document.getElementById('menu').style.display='grid'}
+function win(){playing=false;document.getElementById('heading').textContent='PINEAPPLE RESCUED!';document.getElementById('desc').textContent='You made it to the top of the tower and rescued your friend.';document.getElementById('go').textContent='PLAY AGAIN';document.getElementById('menu').style.display='grid'}
+function update(dt){if(!playing)return;t+=dt;let l=keys.a||keys.arrowleft,r=keys.d||keys.arrowright;p.vx+=(r-l)*.7;p.vx*=.82;p.vx=C(p.vx,-6,6);let old=p.y;p.vy+=.52;p.x+=p.vx;p.y+=p.vy;p.x=C(p.x,4,W-p.w-4);p.on=false;
+for(let q of platforms)if(p.x+p.w>q.x&&p.x<q.x+q.w&&old+p.h<=q.y&&p.y+p.h>=q.y&&p.vy>=0){p.y=q.y-p.h;p.vy=0;p.on=true}
+for(let h of traps){if(h.type==='laser'){let on=Math.sin(t*3+h.phase)>.05;if(on&&p.x+p.w>h.x&&p.x<h.x+h.w&&p.y+p.h>h.y&&p.y<h.y+7)die()}else{let sy=h.y+Math.sin(t*2+h.phase)*10;if(Math.hypot(p.x+7-h.x,p.y+7-sy)<h.r+7)die()}}
+for(let q of items)if(!q.got&&Math.hypot(p.x+7-q.x,p.y+7-q.y)<22){q.got=true;if(q.type==='flappy'){p.extra=Math.min(3,p.extra+1);document.getElementById('f').textContent=3-p.extra+Math.max(0,0);p.extra=Math.min(3,p.extra);document.getElementById('f').textContent=items.filter(z=>z.type==='flappy'&&z.got).length}else win()}
+if(p.y>topY+200)die();if(p.y-cam<H*.42)cam=p.y-H*.42;document.getElementById('floor').textContent=Math.max(1,Math.floor(p.y/100)+1);for(let z of dust){z.x+=z.vx;z.y+=z.vy;z.life-=dt}dust=dust.filter(z=>z.life>0)}
+function tower(){let bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#111a21');bg.addColorStop(1,'#020305');g.fillStyle=bg;g.fillRect(0,0,W,H);let L=W*.07,Q=W*.93;g.fillStyle='#10191f';g.fillRect(L,0,Q-L,H);g.fillStyle='#061017';g.fillRect(W*.23,0,W*.54,H);
+for(let y=-cam%55;y<H+55;y+=55){g.strokeStyle='#27404a';g.lineWidth=2;g.beginPath();g.moveTo(L,y);g.lineTo(Q,y);g.stroke()}g.fillStyle='#0b1115';g.fillRect(L+22,0,16,H);g.fillRect(Q-38,0,16,H);g.fillRect(W*.23-7,0,14,H);g.fillRect(W*.77-7,0,14,H);
+for(let y=-cam%31;y<H+31;y+=31)for(let xx=W*.1;xx<W*.9;xx+=25){let lit=Math.sin(xx*1.8+y*2.7+t)>.85;g.globalAlpha=lit?.7:.5;g.fillStyle=lit?'#b6d9d5':'#18303a';g.fillRect(xx,y,14,17)}g.globalAlpha=1;
+g.strokeStyle='#40535b';g.lineWidth=7;for(let y=-cam%200-200;y<H+250;y+=200){g.beginPath();g.moveTo(L,y);g.lineTo(W*.23,y+100);g.lineTo(L,y+200);g.stroke();g.beginPath();g.moveTo(Q,y);g.lineTo(W*.77,y+100);g.lineTo(Q,y+200);g.stroke()}}
+function draw(){tower();for(let q of platforms){let y=q.y-cam;if(y<-30||y>H+30)continue;g.fillStyle='#3a474d';g.fillRect(q.x,y,q.w,q.h);g.fillStyle='#89949a';g.fillRect(q.x,y,q.w,3);g.fillStyle='#11181c';g.fillRect(q.x+8,y+q.h,q.w-16,6)}
+for(let h of traps){let y=h.y-cam;if(h.type==='laser'){let on=Math.sin(t*3+h.phase)>.05;g.globalAlpha=on?.95:.12;g.fillStyle='#ff3048';g.shadowColor='#ff3048';g.shadowBlur=on?18:2;g.fillRect(h.x,y,h.w,7);g.shadowBlur=0;g.globalAlpha=1}else{let sy=y+Math.sin(t*2+h.phase)*10;g.save();g.translate(h.x,sy);g.rotate(t*4);g.fillStyle='#252b2f';g.strokeStyle='#d0d5d7';g.beginPath();for(let i=0;i<16;i++){let a=i*Math.PI/8,r=i%2?h.r:h.r*.6;g.lineTo(Math.cos(a)*r,Math.sin(a)*r)}g.closePath();g.fill();g.stroke();g.restore()}}
+for(let q of items)if(!q.got){let y=q.y-cam;g.save();g.translate(q.x,y);g.shadowColor='#7ff4ff';g.shadowBlur=18;g.fillStyle='#bffcff';g.beginPath();g.arc(0,0,10,0,7);g.fill();g.shadowBlur=0;g.fillStyle='#17323b';g.font='bold 10px system-ui';g.textAlign='center';g.fillText(q.type==='flappy'?'F':'P',0,4);g.restore()}
+g.save();g.translate(p.x+7,p.y-cam+7);g.shadowColor='#76eaff';g.shadowBlur=18;let pg=g.createLinearGradient(-7,-7,7,7);pg.addColorStop(0,'#fff');pg.addColorStop(.4,'#73eaff');pg.addColorStop(1,'#19719f');g.fillStyle=pg;g.fillRect(-7,-7,14,14);g.shadowBlur=0;g.fillStyle='#06151c';g.fillRect(-2,-2,4,4);g.restore()}
+let last=0;function loop(n){let dt=Math.min(.032,(n-last)/1000||0);last=n;update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 </script></body></html>
