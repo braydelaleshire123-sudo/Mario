@@ -41,105 +41,110 @@ const G={playing:false,t:0,cam:0,checkpoint:0,keys:{},sectionH:0,totalH:0,spawnG
 let player,platforms,hazards,boxes,checkpoints,button,pineapple,audio;
 
 function buildWorld(){
-  G.sectionH=Math.max(560,H*.94);
-  const sections=14, towerL=Math.max(18,W*.025), towerR=Math.min(W-18,W*.975), tw=towerR-towerL;
+  G.sectionH=Math.max(620,H*.98);
+  const sections=24, towerL=Math.max(28,W*.045), towerR=Math.min(W-28,W*.955), tw=towerR-towerL;
   G.totalH=sections*G.sectionH;
   platforms=[];hazards=[];boxes=[];checkpoints=[];
-  const patterns=[
-    [[.08,55,.28],[.50,155,.23],[.22,285,.27],[.62,415,.22],[.38,535,.30]],
-    [[.58,55,.25],[.20,175,.22],[.46,300,.30],[.08,430,.24],[.55,545,.25]],
-    [[.14,55,.30],[.55,175,.22],[.34,300,.22],[.68,420,.22],[.18,535,.28]],
-    [[.48,55,.28],[.10,170,.25],[.40,290,.23],[.68,405,.24],[.25,530,.25]]
+  const rooms=[
+    [[.06,80,.30],[.55,190,.22],[.25,320,.27],[.62,455,.22],[.12,565,.26]],
+    [[.58,75,.25],[.16,205,.20],[.42,335,.28],[.72,470,.18],[.30,575,.24]],
+    [[.18,70,.25],[.60,180,.20],[.34,300,.18],[.08,425,.25],[.55,555,.20]],
+    [[.50,80,.24],[.10,205,.22],[.38,330,.20],[.68,450,.22],[.22,575,.25]]
   ];
   for(let s=0;s<sections;s++){
-    const base=G.totalH-(s+1)*G.sectionH;
-    const pat=patterns[s%patterns.length];
+    const base=G.totalH-(s+1)*G.sectionH, d=s/sections, pat=rooms[s%rooms.length];
     pat.forEach((a,i)=>{
-      const x=towerL+tw*a[0], y=base+G.sectionH-a[1];
-      platforms.push({x,y,w:Math.max(82,tw*a[2]),h:18,section:s,i});
+      const tighten=Math.max(.72,1-d*.28);
+      platforms.push({x:towerL+tw*a[0],y:base+G.sectionH-a[1],w:Math.max(58,tw*a[2]*tighten),h:18,section:s,i});
     });
-    // A safe bridge platform near the top of each screen.
-    const bridgeX=towerL+tw*(s%2?.68:.12);
-    platforms.push({x:bridgeX,y:base+42,w:tw*.18,h:18,section:s,i:9});
-    const difficulty=sections-1-s;
-    if(s<sections-1) boxes.push({x:towerL+tw*(s%2?.43:.57),y:base+110,w:30,h:26,used:false,phase:s});
-    if(s>0) checkpoints.push({x:towerL+tw*(s%2?.76:.16),y:base+70,w:52,h:12,section:s});
-    // Each section gets a little more demanding as you climb: tighter platforms,
-    // extra timing hazards, and moving blades later in the tower.
-    if(difficulty>=2){
-      const extraY=base+G.sectionH-330;
-      platforms.push({x:towerL+tw*(s%2?.16:.58),y:extraY,w:Math.max(62,tw*(.19-difficulty*.004)),h:18,section:s,i:20+difficulty});
+    // A small landing at each screen transition, but only on alternating sides.
+    const bridgeSide=s%2?.70:.10;
+    platforms.push({x:towerL+tw*bridgeSide,y:base+48,w:tw*.17,h:18,section:s,i:9});
+    // Refill boxes become less frequent as the climb gets harder.
+    if(s<sections-1 && (s<10||s%2===0))
+      boxes.push({x:towerL+tw*(s%2?.42:.58),y:base+115,w:30,h:26,used:false,phase:s});
+    // Checkpoint every three screens, like a real long tower.
+    if(s>0 && s%3===0)
+      checkpoints.push({x:towerL+tw*(s%2?.74:.12),y:base+62,w:54,h:12,section:s});
+    // Progressive challenge: early rooms teach movement, later rooms combine hazards.
+    if(s>=2){
+      hazards.push({type:"beam",x:towerL+tw*(s%2?.08:.43),y:base+G.sectionH-250,w:tw*(s<8?.38:.48),h:14,phase:s});
     }
-    if(difficulty>=4){
-      hazards.push({type:"beam",x:towerL+tw*(s%2?.18:.52),y:base+G.sectionH-120,w:tw*.30,h:12,phase:s+4});
-      hazards.push({type:"blade",x:towerL+tw*(.25+.035*difficulty),y:base+G.sectionH-390,r:18+Math.min(8,difficulty),phase:s+3});
+    if(s>=5){
+      hazards.push({type:"beam",x:towerL+tw*(s%2?.46:.06),y:base+G.sectionH-430,w:tw*.28,h:14,phase:s+2});
     }
-    if(difficulty>=7){
-      hazards.push({type:"pipe",x:towerL+tw*(s%2?.48:.12),y:base+G.sectionH-220,w:32,h:145});
-      hazards.push({type:"beam",x:towerL+tw*.08,y:base+G.sectionH-500,w:tw*.24,h:12,phase:s+7});
+    if(s>=7 && s%2===1){
+      hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-350,r:20+Math.min(8,Math.floor(s/4)),phase:s});
     }
-    if(difficulty>=10){
-      platforms.push({x:towerL+tw*.70,y:base+G.sectionH-500,w:Math.max(58,tw*.15),h:18,section:s,i:40+difficulty});
-      hazards.push({type:"blade",x:towerL+tw*.72,y:base+G.sectionH-285,r:24,phase:s+9});
+    if(s>=9 && s%3===0){
+      hazards.push({type:"pipe",x:towerL+tw*(s%2?.76:.18),y:base+G.sectionH-190,w:40,h:145});
     }
-    // Red beam obstacles, inspired by the game's clean geometric hazards.
-    hazards.push({type:"beam",x:towerL+tw*(s%2?.08:.42),y:base+G.sectionH-245,w:tw*(s%2?.55:.48),h:12,phase:s});
-    hazards.push({type:"beam",x:towerL+tw*(s%2?.40:.06),y:base+G.sectionH-455,w:tw*.40,h:12,phase:s+2});
-    if(s%3===0) hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-350,r:20,phase:s});
-    if(s%4===1) hazards.push({type:"pipe",x:towerL+tw*.75,y:base+G.sectionH-180,w:38,h:115});
+    if(s>=12){
+      hazards.push({type:"beam",x:towerL+tw*.24,y:base+G.sectionH-110,w:tw*.52,h:12,phase:s+5});
+    }
+    if(s>=15 && s%2===0){
+      hazards.push({type:"blade",x:towerL+tw*(.22+(s%4)*.18),y:base+G.sectionH-500,r:24,phase:s+8});
+    }
+    if(s>=18){
+      // Late tower rooms deliberately create narrow timing windows.
+      platforms.push({x:towerL+tw*(s%2?.12:.68),y:base+G.sectionH-300,w:Math.max(52,tw*.14),h:18,section:s,i:30+s});
+      hazards.push({type:"pipe",x:towerL+tw*(s%2?.45:.48),y:base+G.sectionH-225,w:34,h:175});
+    }
+    if(s>=21){
+      hazards.push({type:"beam",x:towerL+tw*.10,y:base+G.sectionH-520,w:tw*.80,h:12,phase:s+11});
+      hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-160,r:28,phase:s+12});
+    }
   }
-  // GUARANTEED STARTER ROUTE: put a clear staircase directly above Tiny Square.
-  // These are intentionally close together so the player can immediately see where to go.
+  // Bottom starting room: deliberately safe and compact.
   const starter=[
-    {x:towerL+tw*.12,y:G.totalH-55,w:tw*.28,h:18,section:7,i:100},
-    {x:towerL+tw*.55,y:G.totalH-155,w:tw*.25,h:18,section:7,i:101},
-    {x:towerL+tw*.30,y:G.totalH-270,w:tw*.28,h:18,section:7,i:102},
-    {x:towerL+tw*.62,y:G.totalH-390,w:tw*.24,h:18,section:7,i:103},
-    {x:towerL+tw*.20,y:G.totalH-510,w:tw*.30,h:18,section:7,i:104},
-    {x:towerL+tw*.52,y:G.totalH-635,w:tw*.27,h:18,section:7,i:105}
+    {x:towerL+tw*.10,y:G.totalH-70,w:tw*.32,h:18,section:23,i:100},
+    {x:towerL+tw*.52,y:G.totalH-180,w:tw*.25,h:18,section:23,i:101},
+    {x:towerL+tw*.26,y:G.totalH-305,w:tw*.28,h:18,section:23,i:102},
+    {x:towerL+tw*.60,y:G.totalH-430,w:tw*.23,h:18,section:23,i:103},
+    {x:towerL+tw*.20,y:G.totalH-555,w:tw*.28,h:18,section:23,i:104}
   ];
   platforms.push(...starter);
-
-  const top=0;
-  // The goal is deliberately hidden at the true top of the tower.
-  button={x:W/2-28,y:top+72,w:56,h:24,hit:false};
-  pineapple={x:W/2,y:top+155,collected:false};
-  const startPlatform=starter[0];
-  player={x:startPlatform.x+startPlatform.w*.5-12,y:startPlatform.y-24,w:24,h:24,vx:0,vy:0,onGround:true,airJumps:3,flapFx:0};
-  G.spawnGrace=120;
-  G.cam=Math.max(0,G.totalH-H);G.checkpoint=sections-1;
+  button={x:W/2-30,y:48,w:60,h:26,hit:false};
+  pineapple={x:W/2,y:120,collected:false};
+  const sp=starter[0];
+  player={x:sp.x+sp.w/2-12,y:sp.y-24,w:24,h:24,vx:0,vy:0,onGround:true,airJumps:3,flapFx:0};
+  G.spawnGrace=90;
+  G.checkpoint=23;
+  G.cam=Math.max(0,G.totalH-H);
 }
-
 function music(){
   if(audio)return;
   try{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
     audio=new AC();
-    const master=audio.createGain();master.gain.value=.045;master.connect(audio.destination);
-    const melody=[392,440,494,523,494,440,392,330,392,440,494,587,523,494,440,392];
-    const bass=[98,110,123.47,130.81,123.47,110,98,82.41];
-    const chords=[[196,246.94,293.66],[220,277.18,329.63],[174.61,220,261.63],[196,246.94,293.66]];
-    let step=0,bar=0;
+    const master=audio.createGain();master.gain.value=.035;master.connect(audio.destination);
+    const themes=[
+      {tempo:260,mel:[392,440,494,523,494,440,392,330],bass:[98,110,123.47,130.81]},
+      {tempo:220,mel:[330,392,440,494,587,494,440,392,330,294,330,392],bass:[82.41,98,110,123.47]},
+      {tempo:190,mel:[523,587,659.25,698.46,659.25,587,523,440,494,523,587,659.25],bass:[130.81,146.83,164.81,174.61]},
+      {tempo:170,mel:[659.25,587,523,494,523,587,659.25,783.99,659.25,587,523,440],bass:[164.81,146.83,130.81,110]}
+    ];
+    let step=0,theme=0;
     function tone(freq,dur,type,vol,when){
       const o=audio.createOscillator(),g=audio.createGain();
       o.type=type;o.frequency.value=freq;
       g.gain.setValueAtTime(.0001,when);
-      g.gain.exponentialRampToValueAtTime(vol,when+.025);
+      g.gain.exponentialRampToValueAtTime(vol,when+.018);
       g.gain.exponentialRampToValueAtTime(.0001,when+dur);
-      o.connect(g);g.connect(master);o.start(when);o.stop(when+dur+.03);
+      o.connect(g);g.connect(master);o.start(when);o.stop(when+dur+.02);
     }
     function tick(){
       if(!audio||audio.state!=="running")return;
-      const now=audio.currentTime+.01;
-      const m=melody[step%melody.length];
-      tone(m,.24,"triangle",.20,now);
-      tone(bass[step%bass.length],.38,"sine",.16,now);
-      if(step%4===0)for(const n of chords[bar%chords.length])tone(n,.70,"sine",.055,now);
-      // tiny original percussive accents keep the loop from sounding like five repeated notes
-      if(step%2===0)tone(90,.055,"square",.035,now);
-      step++;if(step%16===0)bar++;
+      const t=themes[theme],now=audio.currentTime+.01,i=step%t.mel.length;
+      tone(t.mel[i],.22,"triangle",.19,now);
+      tone(t.bass[step%t.bass.length],.40,"sine",.14,now);
+      if(step%4===0)tone(t.bass[(step+1)%t.bass.length]*2,.65,"sine",.045,now);
+      if(step%8===0)tone(82,.05,"square",.025,now);
+      step++;
+      if(step%24===0)theme=(theme+1)%themes.length;
+      setTimeout(tick,t.tempo);
     }
-    tick();setInterval(tick,280);
+    tick();
   }catch(e){}
 }
 function start(){buildWorld();G.playing=true;G.t=0;G.spawnGrace=120;document.getElementById("screen").style.display="none";music();if(audio&&audio.state==="suspended")audio.resume()}
@@ -237,9 +242,9 @@ function draw(){
   }
   // screen boundary
   const section=Math.floor((G.totalH-player.y)/G.sectionH);
-  const climb=Math.max(0,Math.min(13,13-section));
+  const climb=Math.max(0,Math.min(23,23-section));
   ctx.fillStyle="#ffffff18";ctx.fillRect(L+1,H*.02,R-L-2,3);
-  ctx.fillStyle="#173f4ccc";ctx.font="bold 11px Arial";ctx.fillText("TOWER "+(climb+1)+" / 14",L+12,28);
+  ctx.fillStyle="#173f4ccc";ctx.font="bold 11px Arial";ctx.fillText("TOWER "+(climb+1)+" / 24",L+12,28);
 
   for(const p of platforms){
     const y=p.y-G.cam;if(y<-35||y>H+35)continue;
@@ -264,8 +269,9 @@ function draw(){
   // Floating refill boxes
   for(const b of boxes)if(!b.used){const y=b.y-G.cam+Math.sin(G.t*2+b.phase)*7;ctx.fillStyle="#d9a83e";ctx.fillRect(b.x,y,b.w,b.h);ctx.strokeStyle="#71572a";ctx.lineWidth=3;ctx.strokeRect(b.x,y,b.w,b.h);ctx.fillStyle="#fff2b1";ctx.font="bold 18px Arial";ctx.fillText("↑",b.x+8,y+20)}
   // Final red button + pineapple
+  const nearTop=G.cam<Math.max(H*.9,G.sectionH*.8);
   const by=button.y-G.cam;ctx.fillStyle="#b63d39";ctx.fillRect(button.x-8,by+button.h,button.w+16,8);ctx.fillStyle=button.hit?"#75e26f":"#ef5d52";ctx.fillRect(button.x,by,button.w,button.h);ctx.strokeStyle="#7d302f";ctx.lineWidth=3;ctx.strokeRect(button.x,by,button.w,button.h);
-  if(!pineapple.collected){const py=pineapple.y-G.cam;ctx.save();ctx.translate(pineapple.x,py);ctx.fillStyle="#e7b938";ctx.beginPath();ctx.ellipse(0,8,13,18,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#59a64f";ctx.beginPath();ctx.moveTo(-10,-8);ctx.lineTo(-5,-24);ctx.lineTo(0,-10);ctx.lineTo(6,-24);ctx.lineTo(10,-8);ctx.fill();ctx.restore()}
+  if(nearTop&&!pineapple.collected){const py=pineapple.y-G.cam;ctx.save();ctx.translate(pineapple.x,py);ctx.fillStyle="#e7b938";ctx.beginPath();ctx.ellipse(0,8,13,18,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#59a64f";ctx.beginPath();ctx.moveTo(-10,-8);ctx.lineTo(-5,-24);ctx.lineTo(0,-10);ctx.lineTo(6,-24);ctx.lineTo(10,-8);ctx.fill();ctx.restore()}
   // Flappy: green Tiny Square with three white feathers above it.
   const px=player.x+12,py=player.y-G.cam+12;
   ctx.save();ctx.translate(px,py);
