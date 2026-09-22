@@ -58,7 +58,7 @@ function buildWorld(){
     [[.72,70,.16],[.52,155,.13],[.22,245,.13],[.08,335,.12],[.48,430,.13],[.70,535,.13]]
   ];
   for(let s=0;s<sections;s++){
-    const base=G.totalH-(s+1)*G.sectionH, d=s/sections, pat=rooms[s%rooms.length];
+    const base=(sections-1-s)*G.sectionH, d=(sections-1-s)/(sections-1), pat=rooms[s%rooms.length];
     pat.forEach((a,i)=>{
       const tighten=Math.max(.58,1-d*.40);
       platforms.push({x:towerL+tw*a[0],y:base+G.sectionH-a[1],w:Math.max(46,tw*a[2]*tighten),h:18,section:s,i});
@@ -145,7 +145,7 @@ function music(){
   }catch(e){}
 }
 function start(){buildWorld();G.playing=true;G.t=0;G.runTime=0;G.spawnGrace=120;document.getElementById("screen").style.display="none";music();if(audio&&audio.state==="suspended")audio.resume()}
-function checkpointRespawn(){const s=G.checkpoint;buildWorld();G.checkpoint=s;G.runTime=0;const p=platforms.find(q=>q.section===s&&q.i<9)||platforms.find(q=>q.section===s);player.x=p.x+p.w*.5-player.w*.5;player.y=p.y-player.h-2;player.vx=0;player.vy=0;player.airJumps=3;G.spawnGrace=90;G.cam=Math.max(0,Math.min(G.totalH-H,player.y-H*.58));G.playing=true;document.getElementById("screen").style.display="none"}
+function checkpointRespawn(){const s=G.checkpoint;buildWorld();G.checkpoint=s;G.runTime=0;const p=platforms.find(q=>q.section===s&&q.i<9)||platforms.find(q=>q.section===s)||platforms.find(q=>q.i===100);if(!p)return;player.x=p.x+p.w*.5-player.w*.5;player.y=p.y-player.h-2;player.vx=0;player.vy=0;player.airJumps=3;G.spawnGrace=90;G.cam=Math.max(0,Math.min(G.totalH-H,player.y-H*.58));G.playing=true;document.getElementById("screen").style.display="none"}
 function die(){G.playing=false;document.getElementById("st").textContent="BACK TO CHECKPOINT";document.getElementById("msg").textContent="You hit a hazard. The tower is built from repeatable screen-sized challenge sections, so try the same section again.";document.getElementById("go").textContent="RESPAWN";document.getElementById("screen").style.display="grid"}
 function win(){G.playing=false;document.getElementById("st").textContent="PINEAPPLE RESCUED!";document.getElementById("msg").textContent="You reached the top of the tower and hit the final button.";document.getElementById("go").textContent="PLAY AGAIN";document.getElementById("screen").style.display="grid"}
 
@@ -173,7 +173,7 @@ function update(){
   const oldBottom=player.y+player.h;
   player.vy+=.52;player.x+=player.vx;player.y+=player.vy;
   // Keep the opening spawn locked safely to its starter platform until the player moves.
-  if(G.spawnGrace>0 && player.y>G.totalH-140){const sp=platforms.find(p=>p.i===100);if(sp){player.y=sp.y-player.h;player.vy=0;player.onGround=true;player.airJumps=3;}}
+  if(G.spawnGrace>0 && player.y>G.totalH-140 && Math.abs(player.x-(platforms.find(p=>p.i===100)?.x||0))<140){const sp=platforms.find(p=>p.i===100);if(sp){player.y=sp.y-player.h;player.vy=0;player.onGround=true;player.airJumps=3;}}
   const L=Math.max(18,W*.025),R=Math.min(W-18,W*.975);
   player.x=Math.max(L,Math.min(R-player.w,player.x));
   if(player.flapFx>0)player.flapFx--;
@@ -212,7 +212,7 @@ function update(){
   const target=H*.55;
   G.cam=player.y-target;
   G.cam=Math.max(0,Math.min(G.totalH-H,G.cam));
-  document.getElementById("cp").textContent=G.checkpoint+1;
+  document.getElementById("cp").textContent=24-G.checkpoint;
   document.getElementById("jumps").textContent=player.airJumps;
 }
 function pineappleBox(){return{x:pineapple.x-20,y:pineapple.y-25,w:40,h:55}}
@@ -243,7 +243,7 @@ function draw(){
     ctx.fillRect(L+tw*.55,yy+250,tw*.28,6);
   }
   // screen boundary
-  const section=Math.floor((G.totalH-player.y)/G.sectionH);
+  const section=Math.max(0,Math.min(23,Math.floor(player.y/G.sectionH)));
   const climb=Math.max(0,Math.min(23,23-section));
   ctx.fillStyle="#ffffff18";ctx.fillRect(L+1,H*.02,R-L-2,3);
   ctx.fillStyle="#173f4ccc";ctx.font="bold 11px Arial";ctx.fillText("TOWER "+(climb+1)+" / 24",L+12,28);
