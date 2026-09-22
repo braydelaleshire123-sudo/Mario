@@ -74,7 +74,7 @@ function makeWorld(){
   pineapple={x:W/2,y:6900,collected:false};
 
   player={
-    x:W/2-7,y:0,w:14,h:14,
+    x:W/2-10,y:-70,w:20,h:20,
     vx:0,vy:0,onGround:true,extraJumps:0
   };
 }
@@ -312,14 +312,14 @@ function draw(){
   // Tiny square.
   const py=player.y-state.camera;
   ctx.save();
-  ctx.translate(player.x+7,py+7);
+  ctx.translate(player.x+10,py+10);
   ctx.shadowColor="#73eaff";ctx.shadowBlur=18;
-  const grad=ctx.createLinearGradient(-7,-7,7,7);
+  const grad=ctx.createLinearGradient(-10,-10,10,10);
   grad.addColorStop(0,"#ffffff");
   grad.addColorStop(.45,"#72eaff");
   grad.addColorStop(1,"#1b70a0");
-  ctx.fillStyle=grad;ctx.fillRect(-7,-7,14,14);
-  ctx.shadowBlur=0;ctx.fillStyle="#06151c";ctx.fillRect(-2,-2,4,4);
+  ctx.fillStyle=grad;ctx.fillRect(-10,-10,20,20);
+  ctx.shadowBlur=0;ctx.fillStyle="#06151c";ctx.fillRect(-3,-3,6,6);
   ctx.restore();
 }
 
