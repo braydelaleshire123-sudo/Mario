@@ -28,7 +28,7 @@ button{padding:13px 30px;border:3px solid #173f4c;border-radius:8px;background:#
 <div id="screen">
   <div class="card">
     <h1 id="st">BIG FLAPPY TOWER</h1>
-    <p id="msg">Climb the giant tower, chain your air jumps, dodge the red hazards and reach the top. Hit the button and rescue Pineapple!</p>
+    <p id="msg">Climb the giant tower, chain your air jumps, dodge the red pipes and hazards, and reach the top. Hit the button and rescue Pineapple!</p>
     <button id="go">START GAME</button>
   </div>
 </div>
@@ -71,11 +71,11 @@ function buildWorld(){
     if(s>=3) hazards.push({type:"beam",x:towerL+tw*(s%2?.08:.45),y:base+G.sectionH-235,w:tw*.32,h:14,phase:s});
     if(s>=7) hazards.push({type:"beam",x:towerL+tw*(s%2?.48:.12),y:base+G.sectionH-425,w:tw*.25,h:12,phase:s+2});
     if(s>=9 && s%2===1) hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-325,r:20+Math.min(10,Math.floor(s/4)),phase:s});
-    if(s>=12 && s%3===0) hazards.push({type:"pipe",x:towerL+tw*(s%2?.72:.18),y:base+G.sectionH-185,w:38,h:125});
+    if(s>=12 && s%3===0) hazards.push({type:"pipe",x:towerL+tw*(s%2?.72:.18),y:base+G.sectionH-185,w:44,h:125});
     if(s>=15) hazards.push({type:"blade",x:towerL+tw*(s%2?.28:.66),y:base+G.sectionH-485,r:23,phase:s+6});
     if(s>=18){
       hazards.push({type:"beam",x:towerL+tw*.22,y:base+G.sectionH-115,w:tw*.56,h:12,phase:s+9});
-      hazards.push({type:"pipe",x:towerL+tw*(s%2?.48:.48),y:base+G.sectionH-255,w:34,h:145});
+      hazards.push({type:"pipe",x:towerL+tw*(s%2?.48:.48),y:base+G.sectionH-255,w:48,h:145});
     }
     if(s>=21){
       hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-175,r:28,phase:s+12});
@@ -272,7 +272,17 @@ function draw(){
       ctx.fillStyle="#ff8072";ctx.fillRect(h.x,y,h.w,4);
       ctx.fillStyle="#b73f3d";ctx.fillRect(h.x,y+h.h,h.w,6);
     }else if(h.type==="pipe"){
-      const y=h.y-G.cam;ctx.fillStyle="#e4544d";ctx.fillRect(h.x,y,h.w,h.h);ctx.fillStyle="#ff8a78";ctx.fillRect(h.x-7,y-10,h.w+14,16);ctx.fillStyle="#b73f3d";ctx.fillRect(h.x-7,y+h.h-5,h.w+14,14);
+      const y=h.y-G.cam;
+      // Chunky RED PIPE: shaft, thick collar, top lip, inner opening and highlights.
+      ctx.fillStyle="#8e2f32";ctx.fillRect(h.x,y,h.w,h.h);
+      ctx.fillStyle="#d94a4b";ctx.fillRect(h.x+5,y,h.w-10,h.h);
+      ctx.fillStyle="#f47b68";ctx.fillRect(h.x+7,y+2,5,h.h-4);
+      ctx.fillStyle="#b73539";ctx.fillRect(h.x-9,y-11,h.w+18,17);
+      ctx.fillStyle="#ef5b55";ctx.fillRect(h.x-9,y-11,h.w+18,6);
+      ctx.fillStyle="#76272d";ctx.fillRect(h.x-6,y-3,h.w+12,7);
+      ctx.fillStyle="#421e28";ctx.beginPath();ctx.ellipse(h.x+h.w/2,y-1,(h.w+4)/2,5,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="#ff9a82";ctx.lineWidth=2;ctx.strokeRect(h.x-9,y-11,h.w+18,17);
+      ctx.fillStyle="#e85a55";ctx.fillRect(h.x+h.w-7,y+18,4,Math.max(10,h.h-25));
     }else{
       const y=h.y-G.cam+Math.sin(G.t*2+h.phase)*24;ctx.save();ctx.translate(h.x,y);ctx.rotate(G.t*5);ctx.fillStyle="#dce8e8";ctx.strokeStyle="#52717a";ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<16;i++){const a=i*Math.PI/8,r=i%2?h.r:h.r*.42;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
     }
