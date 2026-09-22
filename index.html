@@ -332,7 +332,13 @@ function render(){
  for(const p of particles){ctx.globalAlpha=1;ctx.fillStyle=p.color;ctx.fillRect(Math.floor(p.x-cam),Math.floor(p.y),Math.ceil(p.s),Math.ceil(p.s))}
  ctx.restore();
 }
-function loop(t){const dt=(t-last)/1000;last=t;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+function loop(t){
+ const dt=Math.min((t-last)/1000,.033);last=t;
+ try{render();update(dt);}catch(err){console.error(err);}
+ requestAnimationFrame(loop);
+}
+render();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
