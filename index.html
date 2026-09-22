@@ -17,7 +17,7 @@ button{border:0;border-radius:12px;padding:12px 22px;font-weight:800;font-size:1
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="hud"><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">❤ <span id="lives">3</span></div><div class="pill">⭐ <span id="score">0</span></div></div>
+<div id="hud"><div class="pill">LEVEL <span id="levelNum">1</span>/9</div><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">❤ <span id="lives">3</span></div><div class="pill">⭐ <span id="score">0</span></div></div>
 <div id="help">A/D or ←/→ to move • Space/W/↑ to jump</div>
 <div id="screen"><div class="card"><h1 id="title">Game Over</h1><p id="subtitle"></p><button id="restart">Play Again</button></div></div>
 <script>
@@ -228,15 +228,26 @@ function update(dt){
  const target=player.x-W*.35;cam+=(Math.max(0,Math.min(world.w-W,target))-cam)*Math.min(1,dt*7);
  shake=Math.max(0,shake-dt*30);
  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=12*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1)}
- document.getElementById('coins').textContent=coinsGot;document.getElementById('lives').textContent=lives;document.getElementById('score').textContent=score;
+ document.getElementById('levelNum').textContent=level;document.getElementById('coins').textContent=coinsGot;document.getElementById('lives').textContent=lives;document.getElementById('score').textContent=score;
 }
 function cloud(x,y,s){ctx.fillStyle='#ffffffb8';ctx.beginPath();ctx.arc(x,y,24*s,0,7);ctx.arc(x+30*s,y-12*s,31*s,0,7);ctx.arc(x+65*s,y,22*s,0,7);ctx.fill()}
 function drawBG(){
- const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#5aaef5');g.addColorStop(.62,'#bfe8ff');g.addColorStop(1,'#f4d5a2');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- ctx.fillStyle='#ffe49a';ctx.beginPath();ctx.arc(W-120,90,42,0,7);ctx.fill();
- for(let i=0;i<18;i++){let x=i*620-cam*.18;cloud(x,80+(i%3)*55,.8+(i%2)*.2)}
- for(let i=0;i<22;i++){let x=i*600-cam*.35;ctx.fillStyle='#79a96d';ctx.beginPath();ctx.moveTo(x,H*.65);ctx.lineTo(x+180,H*.34);ctx.lineTo(x+360,H*.65);ctx.fill()}
- for(let i=0;i<26;i++){let x=i*470-cam*.52;const base=H*.78;ctx.fillStyle='#477c50';ctx.fillRect(x+25,base-90,18,90);ctx.beginPath();ctx.arc(x+34,base-105,48,0,7);ctx.fill()}
+ const themes=[
+  ['#4d9de0','#d8f3ff','#f7c873'],['#171b3a','#4b5b9a','#b48cff'],['#0b3d2e','#5fbf7f','#d7f59b'],
+  ['#f07b45','#ffd27d','#9c4f2e'],['#243447','#66788a','#c9d6df'],['#162447','#1f6f8b','#7dd3fc'],
+  ['#3b1d5a','#8b5fbf','#f0b6ff'],['#173b2f','#5c9e70','#d7e8a8'],['#203040','#446a8a','#f0d59a']
+ ];
+ const th=themes[(level-1)%themes.length];
+ const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,th[0]);g.addColorStop(.65,th[1]);g.addColorStop(1,th[2]);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ // distant stars / sun
+ if(level===2||level===6||level===7){ctx.fillStyle='#fff9c4';for(let i=0;i<70;i++){let x=(i*173-cam*.08)%W;if(x<0)x+=W;let y=35+(i*47)%220;ctx.globalAlpha=.35+.4*(i%3)/2;ctx.fillRect(x,y,2,2)}ctx.globalAlpha=1;}
+ else {ctx.fillStyle=level===4?'#fff1b8':'#ffe49a';ctx.beginPath();ctx.arc(W-120,90,42,0,7);ctx.fill();}
+ // layered mountains
+ for(let layer=0;layer<3;layer++){for(let i=0;i<18;i++){let x=i*520-cam*(.12+layer*.12);let base=H*(.68+layer*.06);let peak=base-(120+layer*55+(i%3)*35);ctx.fillStyle=['#355c7d','#39734a','#28563d'][layer];ctx.beginPath();ctx.moveTo(x-180,base);ctx.lineTo(x,peak);ctx.lineTo(x+210,base);ctx.fill();}}
+ // foreground trees
+ for(let i=0;i<25;i++){let x=i*430-cam*.45;const base=H*.82;ctx.fillStyle='#214b39';ctx.fillRect(x+25,base-105,20,105);ctx.beginPath();ctx.arc(x+35,base-125,58,0,7);ctx.fill();}
+ // clouds only on brighter levels
+ if(level!==2&&level!==6&&level!==7)for(let i=0;i<14;i++){let x=i*700-cam*.16;cloud(x,75+(i%3)*48,.75+(i%2)*.15);}
 }
 function platform(p){
  const x=p.x-cam;if(x+p.w<0||x>W)return;
@@ -262,7 +273,7 @@ function playerDraw(){
  ctx.fillStyle='#111';ctx.fillRect(5,-16,4,5);ctx.fillStyle='#fff';ctx.fillRect(-8,7,16,4);
  ctx.restore();if(player.power>0)ctx.restore();
 }
-function drawGoal(){const x=activeGoal.x-cam;ctx.fillStyle='#fff';ctx.font='bold 18px Arial';ctx.textAlign='left';ctx.fillText('LEVEL '+level,x-20,activeGoal.y-18);ctx.fillStyle='#eee';ctx.fillRect(x,activeGoal.y,7,105);ctx.fillStyle='#ef476f';ctx.beginPath();ctx.moveTo(x+7,activeGoal.y);ctx.lineTo(x+58,activeGoal.y+18);ctx.lineTo(x+7,activeGoal.y+37);ctx.fill();ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x+3.5,activeGoal.y,8,0,7);ctx.fill()}
+function drawGoal(){const x=activeGoal.x-cam;ctx.fillStyle='#fff';ctx.font='bold 18px Arial';ctx.textAlign='left';ctx.fillText('LEVEL '+level+' FINISH',x-28,activeGoal.y-18);ctx.fillStyle='#eee';ctx.fillRect(x,activeGoal.y,9,105);ctx.fillStyle='#ef476f';ctx.beginPath();ctx.moveTo(x+7,activeGoal.y);ctx.lineTo(x+58,activeGoal.y+18);ctx.lineTo(x+7,activeGoal.y+37);ctx.fill();ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x+3.5,activeGoal.y,8,0,7);ctx.fill()}
 function render(){
  drawBG();const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;ctx.save();ctx.translate(sx,sy);
  for(const p of activePlatforms)platform(p);for(const b of activeBlocks)block(b);for(const o of coins)if(!o.got&&o.x-cam>-30&&o.x-cam<W+30)coin(o);for(const e of activeEnemies)if(e.alive)enemy(e);for(const p of powerups)powerup(p);drawGoal();playerDraw();
