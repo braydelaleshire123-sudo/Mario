@@ -35,7 +35,7 @@ button{padding:13px 30px;border:3px solid #173f4c;border-radius:8px;background:#
 <script>
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
 let W=innerWidth,H=innerHeight,dpr=1;
-function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);if(player)buildWorld()}addEventListener("resize",resize);
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);if(player){const oldCp=G.checkpoint;buildWorld();G.checkpoint=Math.min(oldCp,17)}}addEventListener("resize",resize);
 
 const G={playing:false,t:0,cam:0,checkpoint:0,keys:{},sectionH:0,totalH:0};
 let player,platforms,hazards,boxes,checkpoints,button,pineapple,audio;
@@ -69,11 +69,23 @@ function buildWorld(){
     if(s%3===0) hazards.push({type:"blade",x:towerL+tw*.50,y:base+G.sectionH-350,r:20,phase:s});
     if(s%4===1) hazards.push({type:"pipe",x:towerL+tw*.75,y:base+G.sectionH-180,w:38,h:115});
   }
+  // GUARANTEED STARTER ROUTE: put a clear staircase directly above Tiny Square.
+  // These are intentionally close together so the player can immediately see where to go.
+  const starter=[
+    {x:towerL+tw*.12,y:G.totalH-55,w:tw*.28,h:18,section:17,i:100},
+    {x:towerL+tw*.55,y:G.totalH-155,w:tw*.25,h:18,section:17,i:101},
+    {x:towerL+tw*.30,y:G.totalH-270,w:tw*.28,h:18,section:17,i:102},
+    {x:towerL+tw*.62,y:G.totalH-390,w:tw*.24,h:18,section:17,i:103},
+    {x:towerL+tw*.20,y:G.totalH-510,w:tw*.30,h:18,section:17,i:104},
+    {x:towerL+tw*.52,y:G.totalH-635,w:tw*.27,h:18,section:17,i:105}
+  ];
+  platforms.push(...starter);
+
   const top=0;
   button={x:W/2-28,y:top+72,w:56,h:24};
   pineapple={x:W/2,y:top+125,collected:false};
-  const startY=G.totalH-70;
-  player={x:towerL+tw*.15,y:startY-20,w:20,h:20,vx:0,vy:0,onGround:false,airJumps:3};
+  const startPlatform=starter[0];
+  player={x:startPlatform.x+startPlatform.w*.5-10,y:startPlatform.y-20,w:20,h:20,vx:0,vy:0,onGround:true,airJumps:3};
   G.cam=Math.max(0,G.totalH-H);G.checkpoint=0;
 }
 
@@ -87,7 +99,7 @@ function music(){
   }catch(e){}
 }
 function start(){buildWorld();G.playing=true;G.t=0;document.getElementById("screen").style.display="none";music();if(audio&&audio.state==="suspended")audio.resume()}
-function checkpointRespawn(){buildWorld();const s=G.checkpoint;const p=platforms.find(q=>q.section===s&&q.i===9)||platforms.find(q=>q.section===s);player.x=p.x+p.w*.5-player.w*.5;player.y=p.y-player.h-2;player.vx=0;player.vy=0;player.airJumps=3;G.cam=Math.max(0,Math.min(G.totalH-H,player.y-H*.58));G.playing=true;document.getElementById("screen").style.display="none"}
+function checkpointRespawn(){const s=G.checkpoint;buildWorld();const p=platforms.find(q=>q.section===s&&q.i===9)||platforms.find(q=>q.section===s);player.x=p.x+p.w*.5-player.w*.5;player.y=p.y-player.h-2;player.vx=0;player.vy=0;player.airJumps=3;G.cam=Math.max(0,Math.min(G.totalH-H,player.y-H*.58));G.playing=true;document.getElementById("screen").style.display="none"}
 function die(){G.playing=false;document.getElementById("st").textContent="BACK TO CHECKPOINT";document.getElementById("msg").textContent="You hit a hazard. The tower is built from repeatable screen-sized challenge sections, so try the same section again.";document.getElementById("go").textContent="RESPAWN";document.getElementById("screen").style.display="grid"}
 function win(){G.playing=false;document.getElementById("st").textContent="PINEAPPLE RESCUED!";document.getElementById("msg").textContent="You reached the top of the tower and hit the final button.";document.getElementById("go").textContent="PLAY AGAIN";document.getElementById("screen").style.display="grid"}
 
