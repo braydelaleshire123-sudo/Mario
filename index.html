@@ -67,7 +67,7 @@ let cam=0,coinsGot=0,lives=3,score=0,ended=false,last=performance.now(),shake=0;
 const particles=[];
 function spawn(x,y,n,color){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*5,vy:-Math.random()*4-1,life:.4+Math.random()*.5,color,s:2+Math.random()*4})}
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
-function resetPlayer(){player.x=120;player.y=400;player.vx=0;player.vy=0;player.inv=1.5;cam=0}
+function resetPlayer(){player.x=120;player.y=300;player.vx=0;player.vy=0;player.inv=1.5;cam=0}
 function hurt(){if(player.inv>0)return;lives--;shake=12;spawn(player.x+player.w/2,player.y+player.h/2,18,'#ff6b6b');if(lives<=0){end('GAME OVER','You scored '+score+' points.')}else resetPlayer()}
 function end(t,s){ended=true;document.getElementById('title').textContent=t;document.getElementById('subtitle').textContent=s;document.getElementById('screen').style.display='grid'}
 function restart(){coins.forEach(o=>o.got=false);blocks.forEach(b=>b.used=false);powerups.length=0;enemies.forEach(e=>e.alive=true);coinsGot=0;lives=3;score=0;ended=false;player.inv=0;player.power=0;resetPlayer();document.getElementById('screen').style.display='none'}
