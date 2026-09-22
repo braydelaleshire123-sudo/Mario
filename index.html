@@ -29,7 +29,12 @@ const keys={}; let jumpPressed=false;
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowleft','arrowright','arrowup',' ','a','d','w'].includes(k))e.preventDefault();if(!keys[k]&&(k===' '||k==='w'||k==='arrowup'))jumpPressed=true;keys[k]=true});
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 
-const world={w:12000};
+let level=1;
+const worlds=[
+ {w:12000},
+ {w:9000}
+];
+let world=worlds[0];
 const player={x:120,y:300,w:34,h:52,vx:0,vy:0,ground:false,coyote:0,jumpBuffer:0,face:1,inv:0,power:0,run:0};
 const platforms=[
 {x:0,y:560,w:1100,h:120},{x:1250,y:560,w:600,h:120},{x:1980,y:500,w:600,h:180},
@@ -63,18 +68,64 @@ const enemies=[
 {x:10800,y:518,w:40,h:42,vx:1.8,min:10200,max:11600,alive:true}
 ];
 const goal={x:11750,y:455,w:26,h:105};
+const level2Platforms=[
+{x:0,y:560,w:900,h:120},{x:1050,y:500,w:650,h:180},{x:1850,y:560,w:700,h:120},
+{x:2700,y:450,w:550,h:230},{x:3400,y:560,w:850,h:120},{x:4450,y:500,w:650,h:180},
+{x:5250,y:560,w:800,h:120},{x:6250,y:460,w:650,h:220},{x:7100,y:560,w:900,h:120},
+{x:8150,y:500,w:850,h:180}
+];
+const level2Blocks=[
+{x:300,y:450,w:52,h:52,used:false},{x:1250,y:390,w:52,h:52,used:false},
+{x:2050,y:450,w:52,h:52,used:false},{x:2850,y:340,w:52,h:52,used:false},
+{x:3600,y:450,w:52,h:52,used:false},{x:4700,y:390,w:52,h:52,used:false},
+{x:5500,y:450,w:52,h:52,used:false},{x:6500,y:350,w:52,h:52,used:false},
+{x:7350,y:450,w:52,h:52,used:false},{x:8450,y:390,w:52,h:52,used:false}
+];
+const level2Enemies=[
+{x:520,y:518,w:40,h:42,vx:1.5,min:150,max:800,alive:true},
+{x:1250,y:458,w:40,h:42,vx:-1.5,min:1080,max:1650,alive:true},
+{x:2150,y:518,w:40,h:42,vx:1.7,min:1900,max:2450,alive:true},
+{x:2900,y:408,w:40,h:42,vx:-1.4,min:2750,max:3200,alive:true},
+{x:3700,y:518,w:40,h:42,vx:1.7,min:3450,max:4150,alive:true},
+{x:4700,y:458,w:40,h:42,vx:-1.5,min:4500,max:5050,alive:true},
+{x:5600,y:518,w:40,h:42,vx:1.8,min:5300,max:6000,alive:true},
+{x:6500,y:418,w:40,h:42,vx:-1.5,min:6350,max:6750,alive:true},
+{x:7500,y:518,w:40,h:42,vx:1.7,min:7200,max:7950,alive:true}
+];
+const goal2={x:8850,y:395,w:26,h:105};
 let cam=0,coinsGot=0,lives=3,score=0,ended=false,last=performance.now(),shake=0;
+let activePlatforms=platforms,activeBlocks=blocks,activeEnemies=enemies,activeGoal=goal;
 const particles=[];
 function spawn(x,y,n,color){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-.5)*5,vy:-Math.random()*4-1,life:.4+Math.random()*.5,color,s:2+Math.random()*4})}
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
-function resetPlayer(){player.x=120;player.y=300;player.vx=0;player.vy=0;player.inv=1.5;cam=0}
+function resetPlayer(){player.x=120;player.y=300;player.vx=0;player.vy=0;player.ground=false;player.inv=1.5;cam=0}
+function startLevel2(){
+ level=2;
+ world=worlds[1];
+ activePlatforms=level2Platforms;
+ activeBlocks=level2Blocks;
+ activeEnemies=level2Enemies;
+ activeGoal=goal2;
+ coinsGot=0;
+ coins.length=0;
+ powerups.length=0;
+ activeBlocks.forEach(b=>b.used=false);
+ activeEnemies.forEach(e=>e.alive=true);
+ for(let i=0;i<12;i++) coins.push({x:180+i*55,y:470,got:false,t:Math.random()*6.28});
+ for(let i=0;i<8;i++) coins.push({x:1120+i*60,y:410,got:false,t:Math.random()*6.28});
+ for(let i=0;i<10;i++) coins.push({x:1900+i*55,y:470,got:false,t:Math.random()*6.28});
+ for(let i=0;i<12;i++) coins.push({x:3450+i*55,y:470,got:false,t:Math.random()*6.28});
+ for(let i=0;i<10;i++) coins.push({x:5300+i*55,y:470,got:false,t:Math.random()*6.28});
+ for(let i=0;i<12;i++) coins.push({x:7200+i*55,y:470,got:false,t:Math.random()*6.28});
+ player.x=120;player.y=300;player.vx=0;player.vy=0;player.ground=false;player.inv=2;cam=0;
+}
 function hurt(){if(player.inv>0)return;lives--;shake=12;spawn(player.x+player.w/2,player.y+player.h/2,18,'#ff6b6b');if(lives<=0){end('GAME OVER','You scored '+score+' points.')}else resetPlayer()}
 function end(t,s){ended=true;document.getElementById('title').textContent=t;document.getElementById('subtitle').textContent=s;document.getElementById('screen').style.display='grid'}
-function restart(){coins.forEach(o=>o.got=false);blocks.forEach(b=>b.used=false);powerups.length=0;enemies.forEach(e=>e.alive=true);coinsGot=0;lives=3;score=0;ended=false;player.inv=0;player.power=0;resetPlayer();document.getElementById('screen').style.display='none'}
+function restart(){level=1;world=worlds[0];activePlatforms=platforms;activeBlocks=blocks;activeEnemies=enemies;activeGoal=goal;coins.forEach(o=>o.got=false);blocks.forEach(b=>b.used=false);level2Blocks.forEach(b=>b.used=false);powerups.length=0;enemies.forEach(e=>e.alive=true);level2Enemies.forEach(e=>e.alive=true);coinsGot=0;lives=3;score=0;ended=false;player.inv=0;player.power=0;resetPlayer();document.getElementById('screen').style.display='none'}
 document.getElementById('restart').onclick=restart;
 
 function solidCollision(prevX,prevY){
- const solids=platforms.concat(blocks);
+ const solids=activePlatforms.concat(activeBlocks);
  player.ground=false;
 
  // Reliable collision for platforms and mystery boxes.
@@ -96,6 +147,12 @@ function solidCollision(prevX,prevY){
    if(horizontal&&crossed){
     player.y=p.y+p.h;
     player.vy=0;
+    if(activeBlocks.includes(p) && !p.used){
+     p.used=true;
+     powerups.push({x:p.x+p.w/2-14,y:p.y-28,w:28,h:28,vy:-7,life:8});
+     score+=100;
+     spawn(p.x+p.w/2,p.y,12,'#ffd54a');
+    }
     break;
    }
   }
@@ -126,7 +183,7 @@ function update(dt){
   const p=powerups[i];
   p.vy+=24*dt;p.y+=p.vy*dt;
   // Keep the power-up sitting on the top of the box/platform until collected.
-  for(const s of platforms.concat(blocks)){
+  for(const s of activePlatforms.concat(activeBlocks)){
    if(p.x+p.w>s.x&&p.x<s.x+s.w&&p.y+p.h>=s.y&&p.y+p.h-p.vy*dt<=s.y){
     p.y=s.y-p.h;p.vy=0;
    }
@@ -143,12 +200,12 @@ function update(dt){
   }
  }
  if(player.power>0)player.power-=dt;
- for(const e of enemies)if(e.alive){e.x+=e.vx;if(e.x<e.min||e.x>e.max)e.vx*=-1;const box={x:e.x,y:e.y,w:e.w,h:e.h};if(overlap(player,box)){const stomp=player.vy>0&&player.y+player.h-player.vy<=e.y+12;if(stomp){e.alive=false;player.vy=-9;score+=250;spawn(e.x+20,e.y+20,16,'#b48cff')}else hurt()}}
+ for(const e of activeEnemies)if(e.alive){e.x+=e.vx;if(e.x<e.min||e.x>e.max)e.vx*=-1;const box={x:e.x,y:e.y,w:e.w,h:e.h};if(overlap(player,box)){const stomp=player.vy>0&&player.y+player.h-player.vy<=e.y+12;if(stomp){e.alive=false;player.vy=-9;score+=250;spawn(e.x+20,e.y+20,16,'#b48cff')}else hurt()}}
  if(player.y>H+180){
   // Falling off a platform should not send the player all the way back to the start.
   // Put them back on the nearest platform instead.
   let nearest=null,best=Infinity;
-  for(const p of platforms){
+  for(const p of activePlatforms){
    if(player.x+player.w>p.x&&player.x<p.x+p.w){
     const d=Math.abs(player.x-(p.x+p.w/2));
     if(d<best){best=d;nearest=p}
@@ -163,7 +220,13 @@ function update(dt){
    resetPlayer();
   }
  }
- if(overlap(player,goal))end('LEVEL COMPLETE!','Coins: '+coinsGot+'  •  Score: '+score);
+ if(overlap(player,activeGoal)){
+  if(level===1){
+   startLevel2();
+  }else{
+   end('GAME COMPLETE!','You finished both levels! Coins: '+coinsGot+'  •  Score: '+score);
+  }
+}
  const target=player.x-W*.35;cam+=(Math.max(0,Math.min(world.w-W,target))-cam)*Math.min(1,dt*7);
  shake=Math.max(0,shake-dt*30);
  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=12*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1)}
@@ -201,10 +264,10 @@ function playerDraw(){
  ctx.fillStyle='#111';ctx.fillRect(5,-16,4,5);ctx.fillStyle='#fff';ctx.fillRect(-8,7,16,4);
  ctx.restore();if(player.power>0)ctx.restore();
 }
-function drawGoal(){const x=goal.x-cam;ctx.fillStyle='#eee';ctx.fillRect(x,goal.y,7,105);ctx.fillStyle='#ef476f';ctx.beginPath();ctx.moveTo(x+7,goal.y);ctx.lineTo(x+58,goal.y+18);ctx.lineTo(x+7,goal.y+37);ctx.fill();ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x+3.5,goal.y,8,0,7);ctx.fill()}
+function drawGoal(){const x=activeGoal.x-cam;ctx.fillStyle='#eee';ctx.fillRect(x,activeGoal.y,7,105);ctx.fillStyle='#ef476f';ctx.beginPath();ctx.moveTo(x+7,activeGoal.y);ctx.lineTo(x+58,activeGoal.y+18);ctx.lineTo(x+7,activeGoal.y+37);ctx.fill();ctx.fillStyle='#ffd166';ctx.beginPath();ctx.arc(x+3.5,activeGoal.y,8,0,7);ctx.fill()}
 function render(){
  drawBG();const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;ctx.save();ctx.translate(sx,sy);
- for(const p of platforms)platform(p);for(const b of blocks)block(b);for(const o of coins)if(!o.got&&o.x-cam>-30&&o.x-cam<W+30)coin(o);for(const e of enemies)if(e.alive)enemy(e);for(const p of powerups)powerup(p);drawGoal();playerDraw();
+ for(const p of activePlatforms)platform(p);for(const b of activeBlocks)block(b);for(const o of coins)if(!o.got&&o.x-cam>-30&&o.x-cam<W+30)coin(o);for(const e of activeEnemies)if(e.alive)enemy(e);for(const p of powerups)powerup(p);drawGoal();playerDraw();
  for(const p of particles){ctx.globalAlpha=Math.max(0,p.life*1.5);ctx.fillStyle=p.color;ctx.fillRect(p.x-cam,p.y,p.s,p.s)}ctx.globalAlpha=1;ctx.restore();
 }
 function loop(t){const dt=(t-last)/1000;last=t;update(dt);render();requestAnimationFrame(loop)}requestAnimationFrame(loop);
