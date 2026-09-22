@@ -252,9 +252,10 @@ flash.intensity=4.2;flash.range=28;flash.diffuse=new BABYLON.Color3(.9,1,1);flas
 flash.parent=camera;
 
 const outside=box("outside",new BABYLON.Vector3(0,-2,40),new BABYLON.Vector3(80,.2,110),mats.dark,false);
-const rainMat=emissive("rain","#7fc8d4",.4);
-for(let i=0;i<180;i++){
-  const r=box("rain",new BABYLON.Vector3((Math.random()-.5)*70,Math.random()*30,(Math.random()-.5)*110),new BABYLON.Vector3(.018,.5+Math.random(),.018),rainMat,false);
+const rainMat=emissive("rain","#4d8f98",.16);
+for(let i=0;i<90;i++){
+  const r=box("rain",new BABYLON.Vector3((Math.random()-.5)*70,Math.random()*30,(Math.random()-.5)*110),new BABYLON.Vector3(.008,.18+Math.random()*.28,.008),rainMat,false);
+  r.visibility=.22;
   rain.push(r);
 }
 
@@ -347,7 +348,7 @@ scene.onBeforeRenderObservable.add(()=>{
   flash.position.set(0,.05,.05);
   flash.direction.set(0,0,1);
   for(let i=0;i<rain.length;i++){
-    const r=rain[i];r.position.y-=dt*(9+(i%5));if(r.position.y<-1)r.position.y=30;
+    const r=rain[i];r.position.y-=dt*(6+(i%4));if(r.position.y<-1)r.position.y=30;
   }
   for(const s of screens)s.rotation.y=Math.sin(elapsed*.4)*.002;
   const darkness=1-poweredZones*.28;
