@@ -42,7 +42,7 @@ let player,platforms,hazards,boxes,checkpoints,button,pineapple,audio;
 
 function buildWorld(){
   G.sectionH=Math.max(560,H*.94);
-  const sections=8, towerL=Math.max(18,W*.025), towerR=Math.min(W-18,W*.975), tw=towerR-towerL;
+  const sections=14, towerL=Math.max(18,W*.025), towerR=Math.min(W-18,W*.975), tw=towerR-towerL;
   G.totalH=sections*G.sectionH;
   platforms=[];hazards=[];boxes=[];checkpoints=[];
   const patterns=[
@@ -61,8 +61,27 @@ function buildWorld(){
     // A safe bridge platform near the top of each screen.
     const bridgeX=towerL+tw*(s%2?.68:.12);
     platforms.push({x:bridgeX,y:base+42,w:tw*.18,h:18,section:s,i:9});
+    const difficulty=sections-1-s;
     if(s<sections-1) boxes.push({x:towerL+tw*(s%2?.43:.57),y:base+110,w:30,h:26,used:false,phase:s});
     if(s>0) checkpoints.push({x:towerL+tw*(s%2?.76:.16),y:base+70,w:52,h:12,section:s});
+    // Each section gets a little more demanding as you climb: tighter platforms,
+    // extra timing hazards, and moving blades later in the tower.
+    if(difficulty>=2){
+      const extraY=base+G.sectionH-330;
+      platforms.push({x:towerL+tw*(s%2?.16:.58),y:extraY,w:Math.max(62,tw*(.19-difficulty*.004)),h:18,section:s,i:20+difficulty});
+    }
+    if(difficulty>=4){
+      hazards.push({type:"beam",x:towerL+tw*(s%2?.18:.52),y:base+G.sectionH-120,w:tw*.30,h:12,phase:s+4});
+      hazards.push({type:"blade",x:towerL+tw*(.25+.035*difficulty),y:base+G.sectionH-390,r:18+Math.min(8,difficulty),phase:s+3});
+    }
+    if(difficulty>=7){
+      hazards.push({type:"pipe",x:towerL+tw*(s%2?.48:.12),y:base+G.sectionH-220,w:32,h:145});
+      hazards.push({type:"beam",x:towerL+tw*.08,y:base+G.sectionH-500,w:tw*.24,h:12,phase:s+7});
+    }
+    if(difficulty>=10){
+      platforms.push({x:towerL+tw*.70,y:base+G.sectionH-500,w:Math.max(58,tw*.15),h:18,section:s,i:40+difficulty});
+      hazards.push({type:"blade",x:towerL+tw*.72,y:base+G.sectionH-285,r:24,phase:s+9});
+    }
     // Red beam obstacles, inspired by the game's clean geometric hazards.
     hazards.push({type:"beam",x:towerL+tw*(s%2?.08:.42),y:base+G.sectionH-245,w:tw*(s%2?.55:.48),h:12,phase:s});
     hazards.push({type:"beam",x:towerL+tw*(s%2?.40:.06),y:base+G.sectionH-455,w:tw*.40,h:12,phase:s+2});
@@ -82,8 +101,9 @@ function buildWorld(){
   platforms.push(...starter);
 
   const top=0;
-  button={x:W/2-28,y:top+72,w:56,h:24};
-  pineapple={x:W/2,y:top+125,collected:false};
+  // The goal is deliberately hidden at the true top of the tower.
+  button={x:W/2-28,y:top+72,w:56,h:24,hit:false};
+  pineapple={x:W/2,y:top+155,collected:false};
   const startPlatform=starter[0];
   player={x:startPlatform.x+startPlatform.w*.5-12,y:startPlatform.y-24,w:24,h:24,vx:0,vy:0,onGround:true,airJumps:3,flapFx:0};
   G.spawnGrace=120;
@@ -94,9 +114,32 @@ function music(){
   if(audio)return;
   try{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-    audio=new AC();const master=audio.createGain();master.gain.value=.035;master.connect(audio.destination);
-    const notes=[196,246.94,293.66,246.94,220,261.63,329.63,261.63];let n=0;
-    setInterval(()=>{if(!audio||audio.state!=="running")return;const o=audio.createOscillator(),g=audio.createGain();o.type="square";o.frequency.value=notes[n++%notes.length];g.gain.setValueAtTime(.0001,audio.currentTime);g.gain.exponentialRampToValueAtTime(.5,audio.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.22);o.connect(g);g.connect(master);o.start();o.stop(audio.currentTime+.24)},300);
+    audio=new AC();
+    const master=audio.createGain();master.gain.value=.045;master.connect(audio.destination);
+    const melody=[392,440,494,523,494,440,392,330,392,440,494,587,523,494,440,392];
+    const bass=[98,110,123.47,130.81,123.47,110,98,82.41];
+    const chords=[[196,246.94,293.66],[220,277.18,329.63],[174.61,220,261.63],[196,246.94,293.66]];
+    let step=0,bar=0;
+    function tone(freq,dur,type,vol,when){
+      const o=audio.createOscillator(),g=audio.createGain();
+      o.type=type;o.frequency.value=freq;
+      g.gain.setValueAtTime(.0001,when);
+      g.gain.exponentialRampToValueAtTime(vol,when+.025);
+      g.gain.exponentialRampToValueAtTime(.0001,when+dur);
+      o.connect(g);g.connect(master);o.start(when);o.stop(when+dur+.03);
+    }
+    function tick(){
+      if(!audio||audio.state!=="running")return;
+      const now=audio.currentTime+.01;
+      const m=melody[step%melody.length];
+      tone(m,.24,"triangle",.20,now);
+      tone(bass[step%bass.length],.38,"sine",.16,now);
+      if(step%4===0)for(const n of chords[bar%chords.length])tone(n,.70,"sine",.055,now);
+      // tiny original percussive accents keep the loop from sounding like five repeated notes
+      if(step%2===0)tone(90,.055,"square",.035,now);
+      step++;if(step%16===0)bar++;
+    }
+    tick();setInterval(tick,280);
   }catch(e){}
 }
 function start(){buildWorld();G.playing=true;G.t=0;G.spawnGrace=120;document.getElementById("screen").style.display="none";music();if(audio&&audio.state==="suspended")audio.resume()}
@@ -194,7 +237,9 @@ function draw(){
   }
   // screen boundary
   const section=Math.floor((G.totalH-player.y)/G.sectionH);
+  const climb=Math.max(0,Math.min(13,13-section));
   ctx.fillStyle="#ffffff18";ctx.fillRect(L+1,H*.02,R-L-2,3);
+  ctx.fillStyle="#173f4ccc";ctx.font="bold 11px Arial";ctx.fillText("TOWER "+(climb+1)+" / 14",L+12,28);
 
   for(const p of platforms){
     const y=p.y-G.cam;if(y<-35||y>H+35)continue;
