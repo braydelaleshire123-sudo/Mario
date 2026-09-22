@@ -35,9 +35,9 @@ button{padding:13px 30px;border:3px solid #173f4c;border-radius:8px;background:#
 <script>
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d");
 let W=innerWidth,H=innerHeight,dpr=1;
-function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);if(player){const oldCp=G.checkpoint;buildWorld();G.checkpoint=Math.min(oldCp,17)}}addEventListener("resize",resize);
+function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}addEventListener("resize",resize);
 
-const G={playing:false,t:0,cam:0,checkpoint:0,keys:{},sectionH:0,totalH:0};
+const G={playing:false,t:0,cam:0,checkpoint:0,keys:{},sectionH:0,totalH:0,spawnGrace:0};
 let player,platforms,hazards,boxes,checkpoints,button,pineapple,audio;
 
 function buildWorld(){
@@ -86,6 +86,7 @@ function buildWorld(){
   pineapple={x:W/2,y:top+125,collected:false};
   const startPlatform=starter[0];
   player={x:startPlatform.x+startPlatform.w*.5-10,y:startPlatform.y-20,w:20,h:20,vx:0,vy:0,onGround:true,airJumps:3};
+  G.spawnGrace=120;
   G.cam=Math.max(0,G.totalH-H);G.checkpoint=0;
 }
 
@@ -98,8 +99,8 @@ function music(){
     setInterval(()=>{if(!audio||audio.state!=="running")return;const o=audio.createOscillator(),g=audio.createGain();o.type="square";o.frequency.value=notes[n++%notes.length];g.gain.setValueAtTime(.0001,audio.currentTime);g.gain.exponentialRampToValueAtTime(.5,audio.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+.22);o.connect(g);g.connect(master);o.start();o.stop(audio.currentTime+.24)},300);
   }catch(e){}
 }
-function start(){buildWorld();G.playing=true;G.t=0;document.getElementById("screen").style.display="none";music();if(audio&&audio.state==="suspended")audio.resume()}
-function checkpointRespawn(){const s=G.checkpoint;buildWorld();const p=platforms.find(q=>q.section===s&&q.i===9)||platforms.find(q=>q.section===s);player.x=p.x+p.w*.5-player.w*.5;player.y=p.y-player.h-2;player.vx=0;player.vy=0;player.airJumps=3;G.cam=Math.max(0,Math.min(G.totalH-H,player.y-H*.58));G.playing=true;document.getElementById("screen").style.display="none"}
+function start(){buildWorld();G.playing=true;G.t=0;G.spawnGrace=120;document.getElementById("screen").style.display="none";music();if(audio&&audio.state==="suspended")audio.resume()}
+function checkpointRespawn(){const s=G.checkpoint;buildWorld();G.checkpoint=s;const p=platforms.find(q=>q.section===s&&q.i===9)||platforms.find(q=>q.section===s);player.x=p.x+p.w*.5-player.w*.5;player.y=p.y-player.h-2;player.vx=0;player.vy=0;player.airJumps=3;G.spawnGrace=90;G.cam=Math.max(0,Math.min(G.totalH-H,player.y-H*.58));G.playing=true;document.getElementById("screen").style.display="none"}
 function die(){G.playing=false;document.getElementById("st").textContent="BACK TO CHECKPOINT";document.getElementById("msg").textContent="You hit a hazard. The tower is built from repeatable screen-sized challenge sections, so try the same section again.";document.getElementById("go").textContent="RESPAWN";document.getElementById("screen").style.display="grid"}
 function win(){G.playing=false;document.getElementById("st").textContent="PINEAPPLE RESCUED!";document.getElementById("msg").textContent="You reached the top of the tower and hit the final button.";document.getElementById("go").textContent="PLAY AGAIN";document.getElementById("screen").style.display="grid"}
 
@@ -141,17 +142,20 @@ function update(){
     const box={x:b.x,y:by,w:b.w,h:b.h};
     if(!b.used&&overlap(player,box)){b.used=true;player.airJumps=3;player.vy=-9}
   }
+  if(G.spawnGrace>0)G.spawnGrace--;
   for(const h of hazards){
-    if(h.type==="beam"&&overlap(player,{x:h.x,y:h.y,w:h.w,h:h.h})){die();return}
-    if(h.type==="pipe"&&overlap(player,{x:h.x,y:h.y,w:h.w,h:h.h})){die();return}
-    if(h.type==="blade"){const sy=h.y+Math.sin(G.t*2+h.phase)*24;if(Math.hypot(player.x+10-h.x,player.y+10-sy)<h.r+9){die();return}}
+    if(G.spawnGrace<=0){
+      if(h.type==="beam"&&overlap(player,{x:h.x,y:h.y,w:h.w,h:h.h})){die();return}
+      if(h.type==="pipe"&&overlap(player,{x:h.x,y:h.y,w:h.w,h:h.h})){die();return}
+      if(h.type==="blade"){const sy=h.y+Math.sin(G.t*2+h.phase)*24;if(Math.hypot(player.x+10-h.x,player.y+10-sy)<h.r+9){die();return}}
+    }
   }
   for(const c of checkpoints){
     if(player.y<c.y+35&&player.y>c.y-40&&player.x+player.w>c.x&&player.x<c.x+c.w)G.checkpoint=Math.max(G.checkpoint,c.section);
   }
   if(overlap(player,button)){button.hit=true}
   if(button.hit&&overlap(player,pineappleBox())){pineapple.collected=true;win();return}
-  if(player.y>G.totalH+150){die();return}
+  if(player.y>G.totalH+150 && G.spawnGrace<=0){checkpointRespawn();return}
   const target=H*.55;
   G.cam=player.y-target;
   G.cam=Math.max(0,Math.min(G.totalH-H,G.cam));
