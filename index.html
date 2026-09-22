@@ -45,11 +45,13 @@ function buildWorld(){
   const sections=24, towerL=Math.max(28,W*.045), towerR=Math.min(W-28,W*.955), tw=towerR-towerL;
   G.totalH=sections*G.sectionH;
   platforms=[];hazards=[];boxes=[];checkpoints=[];
+  // Hand-authored room patterns: platforms are staggered vertically and horizontally
+  // so the route reads like a sequence of deliberate jumps, not a pile of rectangles.
   const rooms=[
-    [[.06,80,.30],[.55,190,.22],[.25,320,.27],[.62,455,.22],[.12,565,.26]],
-    [[.58,75,.25],[.16,205,.20],[.42,335,.28],[.72,470,.18],[.30,575,.24]],
-    [[.18,70,.25],[.60,180,.20],[.34,300,.18],[.08,425,.25],[.55,555,.20]],
-    [[.50,80,.24],[.10,205,.22],[.38,330,.20],[.68,450,.22],[.22,575,.25]]
+    [[.07,74,.18],[.34,174,.17],[.68,274,.16],[.42,374,.17],[.12,474,.16],[.58,574,.17]],
+    [[.62,72,.17],[.30,172,.16],[.08,272,.17],[.42,372,.16],[.72,472,.16],[.48,572,.17]],
+    [[.16,70,.17],[.52,168,.16],[.76,268,.15],[.38,368,.16],[.10,468,.16],[.56,568,.15]],
+    [[.70,76,.16],[.48,178,.15],[.18,278,.17],[.58,378,.15],[.30,478,.16],[.72,578,.15]]
   ];
   for(let s=0;s<sections;s++){
     const base=G.totalH-(s+1)*G.sectionH, d=s/sections, pat=rooms[s%rooms.length];
@@ -85,7 +87,7 @@ function buildWorld(){
     }
     if(s>=18){
       // Late tower rooms deliberately create narrow timing windows.
-      platforms.push({x:towerL+tw*(s%2?.12:.68),y:base+365,w:Math.max(52,tw*.14),h:18,section:s,i:30+s});
+      platforms.push({x:towerL+tw*(s%2?.04:.78),y:base+330,w:Math.max(48,tw*.12),h:18,section:s,i:30+s});
       hazards.push({type:"pipe",x:towerL+tw*(s%2?.45:.48),y:base+G.sectionH-225,w:34,h:175});
     }
     if(s>=21){
@@ -99,7 +101,7 @@ function buildWorld(){
     {x:towerL+tw*.52,y:G.totalH-180,w:tw*.25,h:18,section:23,i:101},
     {x:towerL+tw*.26,y:G.totalH-305,w:tw*.28,h:18,section:23,i:102},
     {x:towerL+tw*.60,y:G.totalH-430,w:tw*.23,h:18,section:23,i:103},
-    {x:towerL+tw*.20,y:G.totalH-555,w:tw*.28,h:18,section:23,i:104}
+    {x:towerL+tw*.72,y:G.totalH-555,w:tw*.16,h:18,section:23,i:104}
   ];
   platforms.push(...starter);
   button={x:W/2-30,y:48,w:60,h:26,hit:false};
@@ -136,14 +138,17 @@ function music(){
       const t=themes[theme],now=audio.currentTime+.01,i=step%t.mel.length;
       tone(t.mel[i],.24,"triangle",.16,now);
       tone(t.bass[step%t.bass.length],.42,"sine",.12,now);
-      const harmony=[1,1.25,1.5,2][(Math.floor(step/5)+theme)%4];
-      if(step%2===0)tone(t.mel[(i+3)%t.mel.length]*harmony,.16,"triangle",.055,now+.015);
+      const harmony=[1.25,1.5,1.333,1.5][(Math.floor(step/5)+theme)%4];
+      if(step%2===0)tone(t.mel[(i+3)%t.mel.length]*harmony,.18,"triangle",.042,now+.015);
       if(step%4===0){
         tone(t.bass[(step+1)%t.bass.length]*2,.55,"sine",.045,now);
         tone(t.mel[(i+7)%t.mel.length]/2,.30,"square",.018,now);
       }
+      if(step%20===0){
+        tone(t.bass[0]/2,.16,"sine",.035,now);
+      }
       if(step%8===0){
-        tone(82,.07,"square",.028,now);
+        tone(82,.07,"square",.022,now);
         tone(123.47,.11,"sine",.022,now+.03);
       }
       step++;
@@ -154,7 +159,7 @@ function music(){
   }catch(e){}
 }
 function start(){buildWorld();G.playing=true;G.t=0;G.spawnGrace=120;document.getElementById("screen").style.display="none";music();if(audio&&audio.state==="suspended")audio.resume()}
-function checkpointRespawn(){const s=G.checkpoint;buildWorld();G.checkpoint=s;const p=platforms.find(q=>q.section===s&&q.i===9)||platforms.find(q=>q.section===s);player.x=p.x+p.w*.5-player.w*.5;player.y=p.y-player.h-2;player.vx=0;player.vy=0;player.airJumps=3;G.spawnGrace=90;G.cam=Math.max(0,Math.min(G.totalH-H,player.y-H*.58));G.playing=true;document.getElementById("screen").style.display="none"}
+function checkpointRespawn(){const s=G.checkpoint;buildWorld();G.checkpoint=s;const p=platforms.find(q=>q.section===s&&q.i<9)||platforms.find(q=>q.section===s);player.x=p.x+p.w*.5-player.w*.5;player.y=p.y-player.h-2;player.vx=0;player.vy=0;player.airJumps=3;G.spawnGrace=90;G.cam=Math.max(0,Math.min(G.totalH-H,player.y-H*.58));G.playing=true;document.getElementById("screen").style.display="none"}
 function die(){G.playing=false;document.getElementById("st").textContent="BACK TO CHECKPOINT";document.getElementById("msg").textContent="You hit a hazard. The tower is built from repeatable screen-sized challenge sections, so try the same section again.";document.getElementById("go").textContent="RESPAWN";document.getElementById("screen").style.display="grid"}
 function win(){G.playing=false;document.getElementById("st").textContent="PINEAPPLE RESCUED!";document.getElementById("msg").textContent="You reached the top of the tower and hit the final button.";document.getElementById("go").textContent="PLAY AGAIN";document.getElementById("screen").style.display="grid"}
 
@@ -275,7 +280,7 @@ function draw(){
   // Floating refill boxes
   for(const b of boxes)if(!b.used){const y=b.y-G.cam+Math.sin(G.t*2+b.phase)*7;ctx.fillStyle="#d9a83e";ctx.fillRect(b.x,y,b.w,b.h);ctx.strokeStyle="#71572a";ctx.lineWidth=3;ctx.strokeRect(b.x,y,b.w,b.h);ctx.fillStyle="#fff2b1";ctx.font="bold 18px Arial";ctx.fillText("↑",b.x+8,y+20)}
   // Final red button + pineapple
-  const nearTop=player.y<G.sectionH*2.1;
+  const nearTop=player.y<G.sectionH*1.05;
   if(nearTop){
     const by=button.y-G.cam;ctx.fillStyle="#b63d39";ctx.fillRect(button.x-8,by+button.h,button.w+16,8);ctx.fillStyle=button.hit?"#75e26f":"#ef5d52";ctx.fillRect(button.x,by,button.w,button.h);ctx.strokeStyle="#7d302f";ctx.lineWidth=3;ctx.strokeRect(button.x,by,button.w,button.h);
   }
