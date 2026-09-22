@@ -163,7 +163,7 @@ function update(dt){
  dt=Math.min(dt,0.033);
  if(player.inv>0)player.inv-=dt;
  if(player.power>0)player.power-=dt;
- if(player.power<=0)powerType='';
+ if(player.power<=0){player.power=0;powerType='';}
  const left=keys['arrowleft']||keys['a'],right=keys['arrowright']||keys['d'];
  const boosted=player.power>0&&powerType==='speed';
  const accel=player.ground?(boosted?64:48):34, max=boosted?11:7.5;
@@ -194,7 +194,11 @@ function update(dt){
    }
   }
   if(overlap(player,p)){
-   if(p.type==='oneup'){lives++;score+=1000;}else if(p.type==='mushroom'){player.power=20;powerType='mushroom';score+=500;}else if(p.type==='flower'){player.power=20;powerType='flower';score+=1000;}else if(p.type==='star'){player.power=10;powerType='star';player.inv=10;score+=1000;}else{player.power=10;powerType=p.type;score+=500;}
+   if(p.type==='oneup'){lives++;score+=1000;}
+   else if(p.type==='mushroom'){player.power=999;powerType='mushroom';score+=500;}
+   else if(p.type==='flower'){player.power=999;powerType='flower';score+=1000;}
+   else if(p.type==='star'){player.power=999;powerType='star';player.inv=999;score+=1000;}
+   else{player.power=999;powerType=p.type;score+=500;}
    spawn(p.x+p.w/2,p.y+p.h/2,20,'#7df9ff');
    powerups.splice(i,1);
   }else{
