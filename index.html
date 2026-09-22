@@ -332,18 +332,39 @@ function playerDraw(){
  const x=Math.floor(player.x-cam),y=Math.floor(player.y),flip=player.face<0;
  ctx.save();
  if(flip){ctx.translate(x+player.w,y);ctx.scale(-1,1);}else ctx.translate(x,y);
- if(player.inv>0&&Math.floor(player.inv*12)%2===0)ctx.globalAlpha=.55;
+ if(player.inv>0&&Math.floor(player.inv*12)%2===0)ctx.globalAlpha=.6;
  const step=Math.floor(player.run)%2;
- ctx.fillStyle='#5b2b16';ctx.fillRect(7,39,9,13);ctx.fillRect(23,39,9,13);
+ const powered=player.power>0;
+ // shoes/legs
+ ctx.fillStyle=powered&&powerType==='star'?'#f7d34a':'#5b2b16';
+ ctx.fillRect(7,39,9,13);ctx.fillRect(23,39,9,13);
  if(step){ctx.fillRect(5,48,12,4);ctx.fillRect(22,46,12,6);}else{ctx.fillRect(6,47,11,5);ctx.fillRect(23,48,11,4);}
- ctx.fillStyle='#2f6fe4';ctx.fillRect(5,25,26,16);ctx.fillStyle='#173b9c';ctx.fillRect(5,36,26,5);
- ctx.fillStyle='#f0b27a';ctx.fillRect(9,11,21,16);ctx.fillRect(25,18,8,8);ctx.fillStyle='#5b2b16';ctx.fillRect(7,7,23,8);ctx.fillRect(12,3,18,6);ctx.fillRect(28,12,5,9);
+ // body: classic red/blue fire-power colors
+ ctx.fillStyle=powered&&powerType==='flower'?'#e53935':'#2f6fe4';
+ ctx.fillRect(5,25,26,16);
+ ctx.fillStyle=powered&&powerType==='flower'?'#fff':'#173b9c';
+ ctx.fillRect(5,36,26,5);
+ // head
+ ctx.fillStyle='#f0b27a';ctx.fillRect(9,11,21,16);ctx.fillRect(25,18,8,8);
+ ctx.fillStyle='#5b2b16';ctx.fillRect(7,7,23,8);ctx.fillRect(12,3,18,6);ctx.fillRect(28,12,5,9);
  ctx.fillStyle='#222';ctx.fillRect(25,14,4,5);
- ctx.fillStyle='#e33b2f';ctx.fillRect(5,0,29,8);ctx.fillRect(11,-4,18,5);ctx.fillStyle='#fff';ctx.fillRect(26,5,9,4);
- if(player.power>0){ctx.fillStyle=powerType==='shield'||powerType==='star'?'#7df9ff':'#fff';ctx.fillRect(2,-5,4,62);ctx.fillRect(30,-5,4,62);}
+ // hat
+ ctx.fillStyle=powered&&powerType==='flower'?'#fff':'#e33b2f';
+ ctx.fillRect(5,0,29,8);ctx.fillRect(11,-4,18,5);
+ ctx.fillStyle=powered&&powerType==='flower'?'#e53935':'#fff';
+ ctx.fillRect(26,5,9,4);
+ // power-specific visual effects
+ if(powered&&powerType==='mushroom'){
+   ctx.fillStyle='#e53935';ctx.fillRect(2,7,8,8);ctx.fillRect(28,7,8,8);
+   ctx.fillStyle='#fff';ctx.fillRect(4,9,4,4);ctx.fillRect(30,9,4,4);
+ }else if(powered&&powerType==='flower'){
+   ctx.fillStyle='#fff';ctx.fillRect(2,25,5,13);ctx.fillRect(29,25,5,13);
+ }else if(powered&&powerType==='star'){
+   ctx.fillStyle='#ffd83d';ctx.fillRect(0,17,5,5);ctx.fillRect(29,17,5,5);
+   ctx.fillStyle='#ff5a5a';ctx.fillRect(2,39,5,5);ctx.fillRect(27,39,5,5);
+ }
  ctx.restore();
-}
-function render(){
+}function render(){
  ctx.globalAlpha=1;
  ctx.setTransform(dpr,0,0,dpr,0,0);
  drawBG();
